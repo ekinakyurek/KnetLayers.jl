@@ -16,6 +16,9 @@ lstm = LSTM(100,100;embed=50) #input size=100, hidden=100, embedding=50
 y,h,c,_ = lstm([1,2,3,4]) #you can use integers as one hot vector
 #Do a prediction with a mini-batch which includes unequal length sequences
 y,h,c   = lstm([1,2,3,4],[5,6];sorted=true)
+#See and modify rnn params in a structured view
+lstm.gatesview
+
 ```
 
 ## Exported Layers
