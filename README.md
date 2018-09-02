@@ -12,7 +12,7 @@ mlp = MLP(100,50,20;activation=sigm) # input size=100, hidden=50 and output=20
 prediction = mlp(randn(100,1))
 
 #Instantiate Conv layer with random parameters
-cnn = Conv(3,3,20,10;padding=1,stride=1) # A conv filter with H=3,W=3,C=20,O=10
+cnn = Conv(3,3,3,10;padding=1,stride=1) # A conv filter with H=3,W=3,C=3,O=10
 #Filter your input
 output = cnn(randn(224,224,3,1))
 
