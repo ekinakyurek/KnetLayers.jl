@@ -1,5 +1,4 @@
 # KLayers
-
 KLayers provides configurable deep learning layers for Knet, fostering your model development.
 # Installation
 Currently you need to clone and activate the project
@@ -10,7 +9,7 @@ Currently you need to clone and activate the project
 ## Example Usages
 
 ```JULIA  
-using Knet, KLayers
+using KLayers
 #Instantiate an MLP model with random parameters
 mlp = MLP(100,50,20) # input size=100, hidden=50 and output=20
 #Do a prediction
@@ -40,19 +39,27 @@ lstm.gatesview
 
 ## Exported Layers
 ```
-Linear
-Embed
+Core:
+  Linear
+  Embed
+  Conv
 MLP
-Conv
-LSTM
-GRU
-SRNN
+RNN:
+  LSTM
+  GRU
+  SRNN
+NonLinear:
+  Sigm
+  Tanh
+  ReLU
+  ELU
+  Dropout
 ```
 
 ## TO-DO
 1) Enhance `Conv` Interface   
 2) `CNN` model  
-3) Export `Pool`,`Unpool`,`DeConv`,`Dropout` and non-linear functions(`relu`,`elu`,...) as layers.  
+3) Export `Pool`,`Unpool`,`DeConv`
 4) Known layers such Google's `inception`   
 5) Known embeddings such `Gloove`   
 6) Pretrained Models   

@@ -45,7 +45,7 @@ end
 
 struct BatchNorm <: Model
     params
-    moments::Knet.BNMoments
+    moments::BNMoments
 end
 BatchNorm(channels::Int;o...) =BatchNorm(param(bnparams(eltype(atype),channels)),bnmoments(;o...))
 (m::BatchNorm)(x;o...) = batchnorm(x,m.moments,m.params;o...)

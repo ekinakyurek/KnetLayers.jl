@@ -21,6 +21,7 @@ end
 const lstmmaps = Dict(:i=>(1,5),:f=>(2,6),:n=>(3,7),:o=>(4,8))
 const ihmaps   = Dict(:i=>1,:h=>2)
 const wbmaps   = Dict(:w=>1,:b=>2)
+
 struct LSTM <: RNN
     embedding::Union{Nothing,Embed}
     params
