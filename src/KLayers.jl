@@ -1,6 +1,8 @@
 module KLayers
 import Knet: KnetArray,rnnforw,rnninit,xavier,BNMoments,Param,conv4,gpu,dropout
-import AutoGrad: @diff
+export KnetArray,rnnforw,rnninit,xavier,BNMoments,Param,conv4,gpu,dropout
+import AutoGrad: @diff,@zerograd
+export @diff,@zerograd
 
 abstract type Model end
 
