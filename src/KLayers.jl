@@ -24,7 +24,7 @@ settype!(t::Union{Type{KnetArray},Type{Array}}) = settype!(t{Float32})
 #Param init function
 Prm(x)=Param(atype(x));   export Prm
 include("core.jl");       export Linear,Embed,Conv,Dense,BatchNorm
-include("nonlinear.jl");  export ReLU,Sigm,Tanh,LeakyReLU,ELU,Dropout
+include("nonlinear.jl");  export ReLU,Sigm,Tanh,LeakyReLU,ELU,Dropout,LogP,SoftMax,LogSumExp
 include("mlp.jl");        export MLP
 include("rnn.jl");        export RNN,SRNN,LSTM,GRU
 

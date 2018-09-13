@@ -16,9 +16,9 @@ mlp = MLP(100,50,20) # input size=100, hidden=50 and output=20
 prediction = mlp(randn(Float32,100,1);activation=sigm) #defaul activation is relu
 
 #Instantiate Conv layer with random parameters
-cnn = Conv(3,3,3,10) # A conv filter with H=3,W=3,C=3,O=10
+cnn = Conv(3,3,3,10;padding=1,stride=1) # A conv filter with H=3,W=3,C=3,O=10
 #Filter your input
-output = cnn(randn(Float32,224,224,3,1);padding=1,stride=1)
+output = cnn(randn(Float32,224,224,3,1))
 
 #Instantiate an LSTM model
 lstm = LSTM(100,100;embed=50) #input size=100, hidden=100, embedding=50

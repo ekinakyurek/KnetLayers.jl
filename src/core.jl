@@ -30,21 +30,25 @@ Dense(i::Int,o::Int;f=ReLU(),winit=xavier,binit=zeros)=Dense(Prm(winit(o,i)),Prm
 struct Conv <: Model
     w
     b
+    stride
+    padding
+    mode
 end
-Conv(h::Int;winit=xavier,binit=zeros)=Conv(Prm(winit(h,1,1,1)),binit(1,1,1,1))
-Conv(h::Int,w::Int;winit=xavier,binit=zeros)=Conv(Prm(winit(h,w,1,1)),binit(1,1,1,1))
-Conv(h::Int,w::Int,c::Int;winit=xavier,binit=zeros)=Conv(Prm(winit(h,w,c,1)),binit(1,1,1,1))
-Conv(h::Int,w::Int,c::Int,o::Int;winit=xavier,binit=zeros)=Conv(Prm(winit(h,w,c,o)),binit(1,1,o,1))
-function (m::Conv)(x;o...)
+Conv(h::Int;winit=xavier,binit=zeros,opts...)=Conv(Prm(winit(h,1,1,1)),binit(1,1,1,1);opts...)
+Conv(h::Int,w::Int;winit=xavier,binit=zeros,opts...)=Conv(Prm(winit(h,w,1,1)),binit(1,1,1,1);opts...)
+Conv(h::Int,w::Int,c::Int;winit=xavier,binit=zeros,opts...)=Conv(Prm(winit(h,w,c,1)),binit(1,1,1,1);opts...)
+Conv(h::Int,w::Int,c::Int,o::Int;winit=xavier,binit=zeros,opts...)=Conv(Prm(winit(h,w,c,o)),binit(1,1,o,1);opts...)
+Conv(w,b;stride=1,padding=1,mode=1) = Conv(w,b,stride,padding,mode)
+function (m::Conv)(x)
      n = ndims(x)
      if n == 4
-         return conv4(m.w,x;o...) .+ m.b
+         return conv4(m.w,x;stride=m.stride,padding=m.padding,mode=m.mode) .+ m.b
      elseif n == 3
-         y = conv4(m.w,reshape(x,size(x)...,1);o...) .+ m.b
+         y = conv4(m.w,reshape(x,size(x)...,1);stride=m.stride,padding=m.padding,mode=m.mode) .+ m.b
      elseif n == 2
-         y = conv4(m.w,reshape(x,size(x)...,1,1);o...) .+ m.b
+         y = conv4(m.w,reshape(x,size(x)...,1,1);stride=m.stride,padding=m.padding,mode=m.mode) .+ m.b
      elseif n == 1
-         y = conv4(m.w,reshape(x,size(x)...,1,1,1);o...) .+ m.b
+         y = conv4(m.w,reshape(x,size(x)...,1,1,1);stride=m.stride,padding=m.padding,mode=m.mode) .+ m.b
      else
          error("Conv supports 1,2,3,4 D arrays only")
      end
