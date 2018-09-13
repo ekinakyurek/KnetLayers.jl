@@ -40,19 +40,13 @@ lstm.gatesview
 ## Exported Layers
 ```
 Core:
-  Linear
-  Embed
-  Conv
+  Linear, Embed, Conv, Dense
 MLP
 RNN:
-  LSTM
-  GRU
-  SRNN
+  LSTM, GRU, SRNN
 NonLinear:
-  Sigm
-  Tanh
-  ReLU
-  ELU
+  Sigm,Tanh,ReLU,ELU
+  LogP, LogSumExp, SoftMax
   Dropout
 ```
 
