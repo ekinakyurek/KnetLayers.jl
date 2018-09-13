@@ -1,6 +1,13 @@
 module KLayers
-import Knet: KnetArray,rnnforw,rnninit,xavier,BNMoments,Param,conv4,gpu,dropout
-export KnetArray,rnnforw,rnninit,xavier,BNMoments,Param,conv4,gpu,dropout
+using Knet
+import Knet: save
+export gpu,knetgc,KnetArray,relu,sigm,invx,mat,
+       Data,minibatch,train!,Train,param,param0,
+       logp, logsumexp, nll, accuracy,zeroone,dropout,
+       SGD, Sgd, Momentum, Nesterov, Adam, Adagrad, Adadelta, Rmsprop, update!, optimizers,
+       gaussian, xavier, bilinear,setseed,
+       hyperband, goldensection,RnnJLD,KnetJLD
+
 import AutoGrad: @diff,@zerograd
 export @diff,@zerograd
 
@@ -15,11 +22,10 @@ settype!(t::T) where T<:Type{Array{V}} where V <: AbstractFloat = global atype=t
 settype!(t::Union{Type{KnetArray},Type{Array}}) = settype!(t{Float32})
 
 #Param init function
-param(x)=Param(atype(x))
-
-include("core.jl");      export Linear,Embed,Conv,BatchNorm
-include("nonlinear.jl"); export ReLU,Sigm,Tanh,LeakyReLU,ELU,Dropout
-include("mlp.jl");       export MLP
-include("rnn.jl");       export RNN,SRNN,LSTM,GRU
+Prm(x)=Param(atype(x));   export Prm
+include("core.jl");       export Linear,Embed,Conv,Dense,BatchNorm
+include("nonlinear.jl");  export ReLU,Sigm,Tanh,LeakyReLU,ELU,Dropout
+include("mlp.jl");        export MLP
+include("rnn.jl");        export RNN,SRNN,LSTM,GRU
 
 end # module

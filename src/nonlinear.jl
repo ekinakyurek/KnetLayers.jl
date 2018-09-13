@@ -10,6 +10,18 @@ struct Tanh <: Model
 end
 (l::Tanh)(x) = tanh.(x)
 
+struct LogP <: Model
+end
+(l::LogP)(x;dims=:) = logp(x;dims=dims)
+
+struct SoftMax <: Model
+end
+(l::SoftMax)(x;dims=:) = exp.(logp(x;dims=dims))
+
+struct LogSumExp <: Model
+end
+(l::LogSumExp)(x;dims=:) = logsumexp(x;dims=dims)
+
 struct ELU <: Model
 end
 (l::ELU)(x) = relu.(x) + (exp.(min.(0,x)) .- one(eltype(x)))
