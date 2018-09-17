@@ -11,21 +11,8 @@ os:
 notifications:
   email: false
 
-after_success:
+script:
   - julia -e 'using Pkg; Pkg.add("Documenter"); using KLayers, Documenter; cd(KLayers.dir("docs")); include("make.jl")'
 
-# Do coverage in gitlab:
-#   - julia -e 'using Pkg; Pkg.add("Coverage"); using Knet, Coverage; cd(Knet.dir()); Codecov.submit(process_folder()); Coveralls.submit(process_folder())'
-
-## uncomment to test with the latest AutoGrad
-# before_script:
-#  - julia -e 'Pkg.add("AutoGrad"); Pkg.checkout("AutoGrad")'
-
-## uncomment the following lines to override the default test script
-#script:
-#  - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
-#  - julia --check-bounds=yes -e 'Pkg.clone(pwd()); Pkg.build("Knet"); Pkg.test("Knet"; coverage=true)'
-
-# matrix:
-#   allow_failures:
-#     - julia: nightly  ## getting too many warnings
+# after_success:
+#   - julia -e 'using Pkg; Pkg.add("Documenter"); using KLayers, Documenter; cd(KLayers.dir("docs")); include("make.jl")'
