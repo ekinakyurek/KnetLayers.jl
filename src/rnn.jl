@@ -1,3 +1,66 @@
+"""
+
+    SRNN(inputSize,hiddenSize;activation=:relu,options...)
+    LSTM(inputSize,hiddenSize;options...)
+    GRU(inputSize,hiddenSize;options...)
+
+    (1) (l::T)(x;kwargs...) where T<:RNN
+    (2) (l::T)(x::Array{Int};batchSizes=nothing,kwargs...) where T<:RNN
+    (3) (l::T)(x::Vector{Vector{Int}};sorted=false,kwargs...) where T<:RNN
+
+All RNN layers has above forward run(1,2,3) functionalities.
+
+(1) `x` is an input array with size equals d,[B,T]
+
+(2) For this You need to have an `RNN` with embedding layer.
+`x` is an integer array and inputs coressponds one hot vector indices.
+You can give 2D array for minibatching as rows corresponds to one instance.
+You can give 1D array with minibatching by specifying batch batchSizes argument.
+Checkout `Knet.rnnforw` for this.
+
+(3) For this You need to have an `RNN` with embedding layer.
+`x` is an vector of integer vectors. Every integer vector corresponds to an
+instance. It automatically batches inputs. It is better to give inputs as sorted.
+If your inputs sorted you can make `sorted` argument true to increase performance.
+
+Outputs of the forward functions are always `y,h,c,indices`.
+`h`,`c` and `indices` may be nothing depending on the kwargs you used in forward.
+
+`y` is last hidden states of each layer. `size(y)=(H/2H,[B,T])`.
+If you use batchSizes argument `y` becomes 2D array `size(y)=(H/2H,sum(batchSizes))`.
+To get correct hidden states for an instance in your batch you should use
+indices output.
+
+`h` is the hidden states in each timesstep. `size(h) = h,B,L`
+
+`c` is the hidden states in each timesstep. `size(h) = h,B,L/2L`
+
+`indices` is corresponding indices for your batches in `y` if you used batchSizes.
+To get ith instance's hidden states in each times step,
+you may type: `y[:,indices[i]]`
+`
+
+# options
+
+* `embed=nothing`: embedding size or and embedding layer
+* `numLayers=1`: Number of RNN layers.
+* `bidirectional=false`: Create a bidirectional RNN if `true`.
+* `dropout=0`: Dropout probability. Ignored if `numLayers==1`.
+* `skipInput=false`: Do not multiply the input with a matrix if `true`.
+* `dataType=Float32`: Data type to use for weights.
+* `algo=0`: Algorithm to use, see CUDNN docs for details.
+* `seed=0`: Random number seed for dropout. Uses `time()` if 0.
+* `winit=xavier`: Weight initialization method for matrices.
+* `binit=zeros`: Weight initialization method for bias vectors.
+* `usegpu=(gpu()>=0)`: GPU used by default if one exists.
+
+# kwargs
+* hx=nothing : initial hidden states
+* cx=nothing : initial memory cells
+* hy=false   : if true returns h
+* cy=false   : if true return c
+
+"""
 abstract type RNN <: Model end
 
 struct SRNN <: RNN

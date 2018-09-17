@@ -35,8 +35,11 @@ KLayers.LogSumExp
 ```@docs
 KLayers.MLP   
 ```
+## RNN
 
-
+```@docs
+KLayers.RNN      
+```
 ## Function Index
 
 ```@index
