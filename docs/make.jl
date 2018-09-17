@@ -19,9 +19,9 @@ makedocs(
 )
 
 deploydocs(
-    repo = "github.com/ekinakyurek/KLayers.jl.git",
+    repo = "github.com/ekinakyurek/KLayers.git",
     julia = "1.0",
-    osname = "osx",
+    osname = "linux",
     target = "build",
     make = nothing,
     deps = nothing,
