@@ -31,7 +31,7 @@ If you use batchSizes argument `y` becomes 2D array `size(y)=(H/2H,sum(batchSize
 To get correct hidden states for an instance in your batch you should use
 indices output.
 
-`h` is the hidden states in each timesstep. `size(h) = h,B,L`
+`h` is the hidden states in each timesstep. `size(h) = h,B,L/2L`
 
 `c` is the hidden states in each timesstep. `size(h) = h,B,L/2L`
 
@@ -58,7 +58,7 @@ you may type: `y[:,indices[i]]`
 * hx=nothing : initial hidden states
 * cx=nothing : initial memory cells
 * hy=false   : if true returns h
-* cy=false   : if true return c
+* cy=false   : if true returns c
 
 """
 abstract type RNN <: Model end
