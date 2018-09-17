@@ -1,7 +1,7 @@
 module KLayers
 using Knet
 import Knet: save
-export gpu,knetgc,KnetArray,relu,sigm,invx,mat,
+export gpu,knetgc,KnetArray,relu,sigm,elu,invx,mat,
        Data,minibatch,train!,Train,param,param0,
        logp, logsumexp, nll, accuracy,zeroone,dropout,
        SGD, Sgd, Momentum, Nesterov, Adam, Adagrad, Adadelta, Rmsprop, update!, optimizers,
