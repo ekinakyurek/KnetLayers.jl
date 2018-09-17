@@ -1,4 +1,17 @@
 module KLayers
+
+"""
+    KLayers.dir(path...)
+Construct a path relative to KLayers root.
+# Example
+```julia
+julia> KLayers.dir("src")
+"/Users/ekin/git/KLayers/src"
+```
+"""
+
+dir(path...) = joinpath(dirname(@__DIR__),path...)
+
 using Knet
 import Knet: save
 export gpu,knetgc,KnetArray,relu,sigm,elu,invx,mat,
