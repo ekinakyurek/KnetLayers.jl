@@ -1,4 +1,8 @@
+Welcome to KLayers.jl's documentation!
+===================================
+
 # KLayers
+
 KLayers provides configurable deep learning layers for Knet, fostering your model development. You can use Knet and AutoGrad functionalities without adding them to current workspace.
 
 ## Example Usages
@@ -31,24 +35,10 @@ lstm.gatesview
 
 ```
 
-## Exported Layers
-```
-Core:
-  Linear, Embed, Conv, Dense
-MLP
-RNN:
-  LSTM, GRU, SRNN
-NonLinear:
-  Sigm,Tanh,ReLU,ELU
-  LogP, LogSumExp, SoftMax
-  Dropout
-```
+## Manual
 
-## TO-DO
-1) Enhance `Conv` Interface   
-2) `CNN` model  
-3) Loss functions
-4) Export `Pool`,`Unpool`,`DeConv`
-5) Known layers such Google's `inception`   
-6) Known embeddings such `Gloove`   
-7) Pretrained Models   
+```@contents
+Pages = [
+ "reference.md",
+]
+```

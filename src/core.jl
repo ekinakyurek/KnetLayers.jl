@@ -33,6 +33,7 @@ end
 
 """
     Linear(inputSize,outputSize;kwargs...)
+    (m::Linear)(x) #forward run
 
 
 Creates and linear layer according to given `inputSize` and `outputSize`.
@@ -45,9 +46,7 @@ you can change it `winit` argument
 * `winit=xavier`: weight initialization distribution
 * `bias=zeros`: bias initialization distribution
 
-    (m::Linear)(x)
 """
-
 struct Linear <: Model
     w
     b
@@ -57,6 +56,7 @@ Linear(i::Int,o::Int;winit=xavier,binit=zeros)=Linear(Prm(winit(o,i)),Prm(binit(
 
 """
     Dense(inputSize,outputSize;kwargs...)
+    (m::Dense)(x) #forward run
 
 Creates and deense layer according to given `inputSize` and `outputSize`.
 
@@ -66,9 +66,7 @@ Creates and deense layer according to given `inputSize` and `outputSize`.
 * `bias=zeros`: bias initialization distribution
 * `f=ReLU()`: activation function
 
-    (m::Dense)(x)
 """
-
 struct Dense <: Model
     w
     b
@@ -79,6 +77,7 @@ Dense(i::Int,o::Int;f=ReLU(),winit=xavier,binit=zeros)=Dense(Prm(winit(o,i)),Prm
 
 """
     Conv(h,[w,c,o];kwargs...)
+    (m::Conv)(x) #forward run
 
 Creates and convolutional layer according to given filter dimensions.
 
@@ -93,9 +92,7 @@ Creates and convolutional layer according to given filter dimensions.
 * `alpha=1`: can be used to scale the result.
 * `handle`: handle to a previously created cuDNN context. Defaults to a Knet allocated handle.
 
-    (m::Conv)(x)
 """
-
 struct Conv <: Model
     w
     b
@@ -127,6 +124,10 @@ function (m::Conv)(x)
      return reshape(y,size(y)[1:n])
 end
 
+"""
+    BatchNorm(channels:Int;o...)
+    (m::BatchNorm)(x;o...) #forward run
+"""
 struct BatchNorm <: Model
     params
     moments::Knet.BNMoments

@@ -5,20 +5,18 @@
 Creates a multi layer perceptron according to given hidden states.
 First hidden state is equal to input size and the last one equal to output size.
 
+    (m::MLP)(x;prob=0)
+
+
+Runs MLP with given input `x`. `prob` is the dropout probability.
+
 # Keywords
 
 * `winit=xavier`: weight initialization distribution
 * `bias=zeros`: bias initialization distribution
 * `f=ReLU()`: activation function
 
-
-    (m::MLP)(x;prob=0)
-
-
-Runs MLP with given input `x`. `prob` is the dropout probability.
-
 """
-
 struct MLP <: Model
      layers::Tuple{Vararg{Linear}}
      f

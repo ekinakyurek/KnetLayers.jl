@@ -14,7 +14,6 @@ end
 
 Sigmoid function
 """
-
 struct Sigm <: Model
 end
 (l::Sigm)(x) = sigm.(x)
@@ -25,8 +24,6 @@ end
 
 Tangent hyperbolic function
 """
-
-
 struct Tanh <: Model
 end
 (l::Tanh)(x) = tanh.(x)
@@ -100,7 +97,6 @@ SoftMax() = SoftMax(:)
   dims is an optional argument, if not specified the summation is over the whole x, otherwise the summation is performed over the given dimensions. In particular if x
   is a matrix, dims=1 sums columns of x and dims=2 sums rows of x.
 """
-
 struct LogSumExp <: Model
     dims
 end
