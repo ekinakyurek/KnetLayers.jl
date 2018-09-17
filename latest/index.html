@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Home · KLayers.jl</title><link href="https://cdnjs.cloudflare.com/ajax/libs/normalize/4.2.0/normalize.min.css" rel="stylesheet" type="text/css"/><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.2.0/require.min.js" data-main="assets/documenter.js"></script><script src="siteinfo.js"></script><script src="../versions.js"></script><link href="assets/documenter.css" rel="stylesheet" type="text/css"/></head><body><nav class="toc"><h1>KLayers.jl</h1><select id="version-selector" onChange="window.location.href=this.value" style="visibility: hidden"></select><form class="search" id="search-form" action="search.html"><input id="search-query" name="q" type="text" placeholder="Search docs"/></form><ul><li class="current"><a class="toctext" href="index.html">Home</a><ul class="internal"><li class="toplevel"><a class="toctext" href="#KLayers-1">KLayers</a></li><li><a class="toctext" href="#Example-Usages-1">Example Usages</a></li><li><a class="toctext" href="#Manual-1">Manual</a></li></ul></li><li><span class="toctext">Manual</span><ul><li><a class="toctext" href="reference.html">Reference</a></li></ul></li></ul></nav><article id="docs"><header><nav><ul><li><a href="index.html">Home</a></li></ul><a class="edit-page" href="https://github.com/ekinakyurek/KLayers/blob/master/docs/src/index.md"><span class="fa"></span> Edit on GitHub</a></nav><hr/><div id="topbar"><span>Home</span><a class="fa fa-bars" href="#"></a></div></header><h1><a class="nav-anchor" id="Welcome-to-KLayers.jl&#39;s-documentation!-1" href="#Welcome-to-KLayers.jl&#39;s-documentation!-1">Welcome to KLayers.jl&#39;s documentation!</a></h1><h1><a class="nav-anchor" id="KLayers-1" href="#KLayers-1">KLayers</a></h1><p>KLayers provides configurable deep learning layers for Knet, fostering your model development. You can use Knet and AutoGrad functionalities without adding them to current workspace.</p><h2><a class="nav-anchor" id="Example-Usages-1" href="#Example-Usages-1">Example Usages</a></h2><pre><code class="language-JULIA">using KLayers
+#Instantiate an MLP model with random parameters
+mlp = MLP(100,50,20) # input size=100, hidden=50 and output=20
+#Do a prediction
+prediction = mlp(randn(Float32,100,1);activation=sigm) #defaul activation is relu
+
+#Instantiate Conv layer with random parameters
+cnn = Conv(3,3,3,10;padding=1,stride=1) # A conv filter with H=3,W=3,C=3,O=10
+#Filter your input
+output = cnn(randn(Float32,224,224,3,1))
+
+#Instantiate an LSTM model
+lstm = LSTM(100,100;embed=50) #input size=100, hidden=100, embedding=50
+#You can use integers to represent one hot vectors
+#For example a pass over 5-Length sequence
+y,h,c,_ = lstm([3,2,1,4,5];hy=true,cy=true)
+#You can also use normal array inputs for low-level control
+#One iteration of LSTM
+y,h,c,_ = lstm(randn(100,1);hy=true,cy=true)
+#Pass over a 10-length sequence:
+y,h,c,_ = lstm(randn(100,1,10);hy=true,cy=true)
+#Pass over a mini-batch data which includes unequal length sequences
+y,h,c,_ = lstm([1,2,3,4],[5,6];sorted=true,hy=true,cy=true)
+#To see and modify rnn params in a structured view
+lstm.gatesview
+</code></pre><h2><a class="nav-anchor" id="Manual-1" href="#Manual-1">Manual</a></h2><ul><li><a href="reference.html#Reference-1">Reference</a></li><ul><li><a href="reference.html#Core-1">Core</a></li><li><a href="reference.html#Nonlinear-1">Nonlinear</a></li><li><a href="reference.html#MLP-1">MLP</a></li><li><a href="reference.html#RNN-1">RNN</a></li><li><a href="reference.html#Function-Index-1">Function Index</a></li></ul></ul><footer><hr/><a class="next" href="reference.html"><span class="direction">Next</span><span class="title">Reference</span></a></footer></article></body></html>
