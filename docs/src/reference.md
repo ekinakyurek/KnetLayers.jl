@@ -9,36 +9,36 @@ Pages = ["reference.md"]
 ## Core
 
 ```@docs
-KLayers.Embed   
-KLayers.Linear   
-KLayers.Dense   
-KLayers.Conv   
-KLayers.BatchNorm   
+KnetLayers.Embed   
+KnetLayers.Linear   
+KnetLayers.Dense   
+KnetLayers.Conv   
+KnetLayers.BatchNorm   
 ```
 
 ## Nonlinear
 
 ```@docs
-KLayers.ReLU   
-KLayers.Sigm   
-KLayers.Tanh   
-KLayers.ELU   
-KLayers.LeakyReLU   
-KLayers.Dropout   
-KLayers.SoftMax   
-KLayers.LogP   
-KLayers.LogSumExp   
+KnetLayers.ReLU   
+KnetLayers.Sigm   
+KnetLayers.Tanh   
+KnetLayers.ELU   
+KnetLayers.LeakyReLU   
+KnetLayers.Dropout   
+KnetLayers.SoftMax   
+KnetLayers.LogP   
+KnetLayers.LogSumExp   
 ```
 
 ## MLP
 
 ```@docs
-KLayers.MLP   
+KnetLayers.MLP   
 ```
 ## RNN
 
 ```@docs
-KLayers.RNN      
+KnetLayers.AbstractRNN      
 ```
 ## Function Index
 

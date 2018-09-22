@@ -1,13 +1,13 @@
-Welcome to KLayers.jl's documentation!
+Welcome to KnetLayers.jl's documentation!
 ===================================
 
-# KLayers
+# KnetLayers
 
-KLayers provides configurable deep learning layers for Knet, fostering your model development. You can use Knet and AutoGrad functionalities without adding them to current workspace.
+KnetLayers provides configurable deep learning layers for Knet, fostering your model development. You can use Knet and AutoGrad functionalities without adding them to current workspace.
 
 ## Example Usages
 ```JULIA  
-using KLayers
+using KnetLayers
 #Instantiate an MLP model with random parameters
 mlp = MLP(100,50,20) # input size=100, hidden=50 and output=20
 #Do a prediction

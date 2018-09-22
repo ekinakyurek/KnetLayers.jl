@@ -4,21 +4,21 @@
     LSTM(inputSize,hiddenSize;options...)
     GRU(inputSize,hiddenSize;options...)
 
-    (1) (l::T)(x;kwargs...) where T<:RNN
-    (2) (l::T)(x::Array{Int};batchSizes=nothing,kwargs...) where T<:RNN
-    (3) (l::T)(x::Vector{Vector{Int}};sorted=false,kwargs...) where T<:RNN
+    (1) (l::T)(x;kwargs...) where T<:AbstractRNN
+    (2) (l::T)(x::Array{Int};batchSizes=nothing,kwargs...) where T<:AbstractRNN
+    (3) (l::T)(x::Vector{Vector{Int}};sorted=false,kwargs...) where T<:AbstractRNN
 
 All RNN layers has above forward run(1,2,3) functionalities.
 
 (1) `x` is an input array with size equals d,[B,T]
 
-(2) For this You need to have an `RNN` with embedding layer.
+(2) For this You need to have an RNN with embedding layer.
 `x` is an integer array and inputs coressponds one hot vector indices.
 You can give 2D array for minibatching as rows corresponds to one instance.
 You can give 1D array with minibatching by specifying batch batchSizes argument.
 Checkout `Knet.rnnforw` for this.
 
-(3) For this You need to have an `RNN` with embedding layer.
+(3) For this You need to have an RNN with embedding layer.
 `x` is an vector of integer vectors. Every integer vector corresponds to an
 instance. It automatically batches inputs. It is better to give inputs as sorted.
 If your inputs sorted you can make `sorted` argument true to increase performance.
@@ -61,9 +61,9 @@ you may type: `y[:,indices[i]]`
 * cy=false   : if true returns c
 
 """
-abstract type RNN <: Model end
+abstract type AbstractRNN <: Model end
 
-struct SRNN <: RNN
+struct SRNN <: AbstractRNN
     embedding::Union{Nothing,Embed}
     params
     specs
@@ -85,7 +85,7 @@ const lstmmaps = Dict(:i=>(1,5),:f=>(2,6),:n=>(3,7),:o=>(4,8))
 const ihmaps   = Dict(:i=>1,:h=>2)
 const wbmaps   = Dict(:w=>1,:b=>2)
 
-struct LSTM <: RNN
+struct LSTM <: AbstractRNN
     embedding::Union{Nothing,Embed}
     params
     specs
@@ -104,7 +104,7 @@ end
 (m::LSTM)(x,h...;o...) = _forw(m,x,h...;o...)
 
 const grumaps  = Dict(:r=>(1,4),:u=>(2,5),:n=>(3,6))
-struct GRU <: RNN
+struct GRU <: AbstractRNN
     embedding::Union{Nothing,Embed}
     params
     specs
@@ -127,14 +127,14 @@ _getEmbed(input::Int,embed::Nothing)   = (nothing,input)
 _getEmbed(input::Int,embed::Embed)     = size(embed.w,2) == input ? (embed,input) : error("dimension mismatch in your embedding")
 _getEmbed(input::Int,embed::Integer)   = (Embed(input,embed),embed)
 
-function _forw(rnn::RNN,seq::Array{T},h...;batchSizes=nothing,o...) where T<:Integer
+function _forw(rnn::AbstractRNN,seq::Array{T},h...;batchSizes=nothing,o...) where T<:Integer
     rnn.embedding === nothing && error("rnn has no embedding!")
     ndims(seq) == 1 && batchSizes === nothing && (seq = reshape(seq,1,length(seq)))
     y,h,c,_ = rnnforw(rnn.specs,rnn.params,rnn.embedding(seq),h...;batchSizes=batchSizes,o...)
     return y,h,c,nothing
 end
 
-function _forw(rnn::RNN,batch::Vector{Vector{T}},h...;sorted=true,o...) where T<:Integer
+function _forw(rnn::AbstractRNN,batch::Vector{Vector{T}},h...;sorted=true,o...) where T<:Integer
     rnn.embedding === nothing && error("rnn has no embedding!")
     if all(length.(batch).==length(batch[1]))
         return _forw(rnn,cat(batch...;dims=2)',h...;o...)
@@ -155,7 +155,7 @@ function _forw(rnn::RNN,batch::Vector{Vector{T}},h...;sorted=true,o...) where T<
     return y,h,c,inds
 end
 
-function _forw(rnn::RNN,x,h...;o...)
+function _forw(rnn::AbstractRNN,x,h...;o...)
     if rnn.embedding === nothing
         y,h,c,_ = rnnforw(rnn.specs,rnn.params,x,h...;o...)
     else

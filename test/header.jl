@@ -1,2 +1,2 @@
-using Test, KLayers
-KLayers.settype!(Array{Float64})
+using Test,KnetLayers
+KnetLayers.settype!(Array{Float64})

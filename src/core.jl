@@ -77,15 +77,23 @@ Dense(i::Int,o::Int;f=ReLU(),winit=xavier,binit=zeros)=Dense(Prm(winit(o,i)),Prm
 
 """
     Conv(h,[w,c,o];kwargs...)
-    (m::Conv)(x) #forward run
 
 Creates and convolutional layer according to given filter dimensions.
+
+    (m::Conv)(x) #forward run
+
+If `m.w` has dimensions `(W1,W2,...,I,O)` and
+`x` has dimensions `(X1,X2,...,I,N)`, the result `y` will have
+dimensions `(Y1,Y2,...,O,N)` where
+
+    Yi=1+floor((Xi+2*padding[i]-Wi)/stride[i])
+
 
 # Keywords
 
 * `winit=xavier`: weight initialization distribution
 * `bias=zeros`: bias initialization distribution
-* `padding=0`: the number of extra zeros implicitly concatenated at the start and at the end of each dimension.
+* `padding=0`: the nßumber of extra zeros implicitly concatenated at the start and at the end of each dimension.
 * `stride=1`: the number of elements to slide to reach the next filtering window.
 * `upscale=1`: upscale factor for each dimension.
 * `mode=0`: 0 for convolution and 1 for cross-correlation.
@@ -98,6 +106,7 @@ struct Conv <: Model
     b
     padding
     stride
+    pool
     upscale
     mode
     alpha
@@ -106,7 +115,7 @@ Conv(h::Int;winit=xavier,binit=zeros,opts...)=Conv(Prm(winit(h,1,1,1)),binit(1,1
 Conv(h::Int,w::Int;winit=xavier,binit=zeros,opts...)=Conv(Prm(winit(h,w,1,1)),binit(1,1,1,1);opts...)
 Conv(h::Int,w::Int,c::Int;winit=xavier,binit=zeros,opts...)=Conv(Prm(winit(h,w,c,1)),binit(1,1,1,1);opts...)
 Conv(h::Int,w::Int,c::Int,o::Int;winit=xavier,binit=zeros,opts...)=Conv(Prm(winit(h,w,c,o)),binit(1,1,o,1);opts...)
-Conv(w,b;stride=1,padding=0,mode=0,upscale=1,alpha=1) = Conv(w,b,padding,stride,upscale,mode,alpha)
+Conv(w,b;stride=1,padding=0,mode=0,upscale=1,alpha=1,pool=0) = Conv(w,b,padding,stride,pool,upscale,mode,alpha)
 function (m::Conv)(x)
      n = ndims(x)
      if n == 4

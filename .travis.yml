@@ -11,8 +11,8 @@ os:
 notifications:
   email: false
 
-script:
-  - julia -e 'using Pkg; Pkg.add("Documenter"); using KLayers, Documenter; cd(KLayers.dir("docs")); include("make.jl")'
+# script:
+#   - julia -e 'using Pkg; Pkg.add("Documenter"); using KnetLayers, Documenter; cd(KnetLayers.dir("docs")); include("make.jl")'
 
-# after_success:
-#   - julia -e 'using Pkg; Pkg.add("Documenter"); using KLayers, Documenter; cd(KLayers.dir("docs")); include("make.jl")'
+after_success:
+  - julia -e 'using Pkg; Pkg.add("Documenter"); using KnetLayers, Documenter; cd(KnetLayers.dir("docs")); include("make.jl")'
