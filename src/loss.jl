@@ -5,6 +5,7 @@ Calculates negative log likelihood error on your predicted scores.
 `answers` should be integers corresponding to correct class indices.
 If an answer is 0, loss from that answer will not be included.
 This is usefull feature when you are working with unequal length sequences.
+
 if dims==1
 * size(scores) = C,[B,T1,T2,...]
 * size(answers)= [B,T1,T2,...]

@@ -2,7 +2,7 @@
     ReLU()
     (l::ReLU)(x) = max(0,x)
 
-Fast kernel is avaiable for gpu
+Rectified Linear Unit function.
 """
 struct ReLU <: Model
 end
@@ -32,6 +32,8 @@ end
 """
     ELU()
     (l::ELU)(x) = elu(x) -> Computes x < 0 ? exp(x) - 1 : x
+
+Exponential Linear Unit nonlineariy.
 """
 struct ELU <: Model
 end

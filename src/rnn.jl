@@ -6,7 +6,7 @@
         indices
     end
 
-Outputs of the RNN models are always `RNNOutput`.
+Outputs of the RNN models are always `RNNOutput`
 `hidden`,`memory` and `indices` may be nothing depending on the kwargs you used in forward.
 
 `y` is last hidden states of each layer. `size(y)=(H/2H,[B,T])`.
@@ -51,8 +51,7 @@ Checkout `Knet.rnnforw` for this.
 instance. It automatically batches inputs. It is better to give inputs as sorted.
 If your inputs sorted you can make `sorted` argument true to increase performance.
 
-    see RNNOutput
-`
+see RNNOutput
 
 # options
 
@@ -68,7 +67,8 @@ If your inputs sorted you can make `sorted` argument true to increase performanc
 * `binit=zeros`: Weight initialization method for bias vectors.
 * `usegpu=(gpu()>=0)`: GPU used by default if one exists.
 
-# kwargs
+# Keywords
+
 * hx=nothing : initial hidden states
 * cx=nothing : initial memory cells
 * hy=false   : if true returns h
@@ -138,8 +138,11 @@ end
 (m::GRU)(x,h...;o...) = _box(_forw(m,x,h...;o...))
 
 """
+
     PadSequenceArray(batch::Vector{Vector{T}}) where T<:Integer
+
 Pads a batch of integer arrays with zeros
+
 ```
 julia> PadSequenceArray([[1,2,3],[1,2],[1]])
 3×3 Array{Int64,2}:
