@@ -16,5 +16,5 @@ elseif dims==2
 struct CrossEntropyLoss <: Model
     dims::Int
 end
-CrossEntropyLoss(;dims=1) = CrossEntropyLoss(dims)
+CrossEntropyLoss() = CrossEntropyLoss(:)
 (l::CrossEntropyLoss)(y,answers::Array{<:Integer})=nll(y,answers;dims=l.dims)

@@ -34,23 +34,23 @@ be specified as a single number (in which case they apply to all dimensions), or
 an array/tuple with entries for each spatial dimension.
 
 Keywords:
-≡≡≡≡≡≡≡≡≡≡≡
 
-  •    window=2: the pooling window size for each dimension.
+* window=2: the pooling window size for each dimension.
 
-  •    padding=0: the number of extra zeros implicitly concatenated at the
-      start and at the end of each dimension.
+* padding=0: the number of extra zeros implicitly concatenated at the
+start and at the end of each dimension.
 
-  •    stride=window: the number of elements to slide to reach the next pooling
-      window.
+* stride=window: the number of elements to slide to reach the next pooling
+window.
 
-  •    mode=0: 0 for max, 1 for average including padded values, 2 for average
-      excluding padded values.
+* mode=0: 0 for max, 1 for average including padded values, 2 for average
+excluding padded values.
 
-  •    maxpoolingNanOpt=0: Nan numbers are not propagated if 0, they are
-      propagated if 1.
+* maxpoolingNanOpt=0: Nan numbers are not propagated if 0, they are
+propagated if 1.
 
-  •    alpha=1: can be used to scale the result.
+* alpha=1: can be used to scale the result.
+
 """
 Pool(;o...)   = GenericPool(;o...)
 
