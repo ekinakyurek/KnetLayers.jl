@@ -6,16 +6,17 @@
 Pages = ["reference.md"]
 ```
 
-## Core
+## Core Layers
 
 ```@docs
+KnetLayers.Projection
 KnetLayers.Embed   
 KnetLayers.Linear   
 KnetLayers.Dense   
 KnetLayers.BatchNorm   
 ```
 
-## Nonlinear
+## Nonlinearities
 
 ```@docs
 KnetLayers.ReLU   
@@ -29,13 +30,13 @@ KnetLayers.LogP
 KnetLayers.LogSumExp   
 ```
 
-## Loss
+## Loss Functions
 
 ```@docs
 KnetLayers.CrossEntropyLoss
 ```
 
-## CNN
+## Convolutional Layers
 ```@docs
 KnetLayers.Conv   
 KnetLayers.DeConv   
@@ -43,7 +44,7 @@ KnetLayers.Pool
 KnetLayers.UnPool  
 ```
 
-## RNN
+## Recurrent Layers
 
 ```@docs
 KnetLayers.AbstractRNN  
@@ -52,7 +53,7 @@ KnetLayers.PadSequenceArray
 KnetLayers.PadRNNOutput
 ```
 
-## Special
+## Special Layers
 
 ```@docs
 KnetLayers.MLP   

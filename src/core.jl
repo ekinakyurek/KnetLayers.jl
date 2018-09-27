@@ -1,8 +1,8 @@
 abstract type Model end
 """
-    Projection(inputSize,embedSize;winit=xavier)
+    Projection(inputSize,projectSize;winit=xavier)
 
-Creates a projection layer according to given `inputSize` and `embedSize`.
+Creates a projection layer according to given `inputSize` and `projectSize`.
 
     (m::Projection)(x) = m.w*x
 

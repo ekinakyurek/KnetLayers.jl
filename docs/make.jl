@@ -1,11 +1,11 @@
-using Documenter, KLayers
+using Documenter, KnetLayers
 
 makedocs(
 
-    modules = [KLayers],
+    modules = [KnetLayers],
     clean = false,              # do we clean build dir
     format = :html,
-    sitename = "KLayers.jl",
+    sitename = "KnetLayers.jl",
     authors = "Ekin Akyurek and contributors.",
     doctest = true,
     pages = Any[ # Compat: `Any` for 0.4 compat
@@ -19,7 +19,7 @@ makedocs(
 )
 
 deploydocs(
-    repo = "github.com/ekinakyurek/KLayers.git",
+    repo = "github.com/ekinakyurek/KnetLayers.jl.git",
     julia = "1.0",
     osname = "linux",
     target = "build",
