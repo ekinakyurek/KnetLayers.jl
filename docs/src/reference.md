@@ -26,7 +26,7 @@ KnetLayers.ELU
 KnetLayers.LeakyReLU   
 KnetLayers.Dropout   
 KnetLayers.SoftMax   
-KnetLayers.LogP   
+KnetLayers.LogSoftMax   
 KnetLayers.LogSumExp   
 ```
 

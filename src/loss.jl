@@ -1,5 +1,5 @@
 """
-    CrossEntropyLoss(; dims=1)
+    CrossEntropyLoss(dims=1)
     (l::CrossEntropyLoss)(scores, answers::Array{<:Integer})
 Calculates negative log likelihood error on your predicted scores.
 `answers` should be integers corresponding to correct class indices.
@@ -16,5 +16,5 @@ elseif dims==2
 struct CrossEntropyLoss <: Model
     dims::Int
 end
-CrossEntropyLoss() = CrossEntropyLoss(:)
+CrossEntropyLoss() = CrossEntropyLoss(1)
 (l::CrossEntropyLoss)(y,answers::Array{<:Integer})=nll(y,answers;dims=l.dims)

@@ -61,19 +61,19 @@ end
 (l::Dropout)(x) = dropout(x,l.p)
 
 """
-    LogP(dims=:)
-    (l::LogP)(x)
+    LogSoftMax(dims=:)
+    (l::LogSoftMax)(x)
 
 Treat entries in x as as unnormalized log probabilities and return normalized log probabilities.
 
 dims is an optional argument, if not specified the normalization is over the whole x, otherwise the normalization is performed over the given dimensions. In
 particular, if x is a matrix, dims=1 normalizes columns of x and dims=2 normalizes rows of x.
 """
-struct LogP <: Model
+struct LogSoftMax <: Model
     dims
 end
-LogP() = LogP(:)
-(l::LogP)(x) = logp(x;dims=l.dims)
+LogSoftMax() = LogSoftMax(:)
+(l::LogSoftMax)(x) = logp(x;dims=l.dims)
 
 """
     SoftMax(dims=:)
