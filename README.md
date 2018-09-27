@@ -45,10 +45,9 @@ NonLinear:
 ```
 
 ## TO-DO
-1) Enhance `Conv` Interface   
-2) `CNN` model  
-3) Loss functions
-4) Export `Pool`,`Unpool`,`DeConv`
-5) Known layers such Google's `inception`   
-6) Known embeddings such `Gloove`   
-7) Pretrained Models   
+1) Use dropout only in training
+2) Loss functions
+3) Examples
+4) Special layers such Google's `inception`   
+5) Known embeddings such `Gloove`   
+6) Pretrained Models   

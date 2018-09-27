@@ -12,7 +12,6 @@ Pages = ["reference.md"]
 KnetLayers.Embed   
 KnetLayers.Linear   
 KnetLayers.Dense   
-KnetLayers.Conv   
 KnetLayers.BatchNorm   
 ```
 
@@ -30,16 +29,35 @@ KnetLayers.LogP
 KnetLayers.LogSumExp   
 ```
 
-## MLP
+## Loss
+
+```@docs
+KnetLayers.CrossEntropyLoss
+```
+
+## CNN
+```@docs
+KnetLayers.Conv   
+KnetLayers.DeConv   
+KnetLayers.Pool   
+KnetLayers.UnPool  
+```
+
+## RNN
+
+```@docs
+KnetLayers.AbstractRNN  
+KnetLayers.RNNOutput
+KnetLayers.PadSequenceArray
+KnetLayers.PadRNNOutput
+```
+
+## Special
 
 ```@docs
 KnetLayers.MLP   
 ```
-## RNN
 
-```@docs
-KnetLayers.AbstractRNN      
-```
 ## Function Index
 
 ```@index
