@@ -1,15 +1,24 @@
 using KnetLayers
-B, maxL= 32, 15; # Batch size and maximum sequence length for training
-pad(y::Array{<:Integer})=(y[:,1].=10;y) # insert pad chracter for T=0
+pad(p::Int,x::Array)=cat(p*ones(Int,size(x,1)),x;dims=2);
+pad(x::Array,p::Int)=cat(x,p*ones(Int,size(x,1));dims=2);
 
-struct S2S; encoder; decoder; output; loss; end # model consists of encoder-decoder
-(m::S2S)(x)     = m.output(m.decoder(pad(sort(x,dims=2)), m.encoder(x;hy=true).hidden ).y)
+struct S2S; encoder; decoder; output; loss; end # model definition
+model = S2S(LSTM(11,128;embed=9),LSTM(11,128;embed=9),Projection(128,11),CrossEntropyLoss())
+(m::S2S)(x)     = m.output(m.decoder(pad(10,sort(x,dims=2)), m.encoder(x;hy=true).hidden).y)
 predict(m,x)    = getindex.(argmax(Array(m(x)),dims=1)[1,:,:],1)
 loss(m,x,ygold) = m.loss(m(x),ygold)
 
-dataxy(x) = (x,sort(x,dims=2))
+dataxy(x) = (x,pad(sort(x,dims=2),11))
+B, maxL= 64, 15; # Batch size and maximum sequence length for training
 data = [dataxy([rand(1:9) for j=1:B,k=1:rand(1:maxL)]) for i=1:10000]
+train!(model,data;loss=loss,optimizer=Adam())
 
-model = S2S(LSTM(10,32;embed=5),LSTM(10,32;embed=5),Projection(32,10),CrossEntropyLoss())
-train!(model,data;loss=loss,optimizer=Adam(;lr=.0001))
-predict(model,[3 2 1 4 5 9 3 5 6 6 1 2 5;])
+
+"julia> predict(model,[3 2 1 4 5 9 3 5 6 6 1 2 5 7 8 5 5 2 9;])
+1×19 Array{Int64,2}:
+ 1  1  2  2  2  3  3  4  5  5  5  5  5  6  6  7  8  9  9
+
+ julia> sort([3 2 1 4 5 9 3 5 6 6 1 2 5 7 8 5 5 2 9];dims=2)
+1×19 Array{Int64,2}:
+ 1  1  2  2  2  3  3  4  5  5  5  5  5  6  6  7  8  9  9
+"

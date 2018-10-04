@@ -41,7 +41,7 @@ end
 
 """
     LeakyReLU(α=0.2)
-    (l::ELU)(x) -> Computes x < 0 ? α*x : x
+    (l::LeakyReLU)(x) -> Computes x < 0 ? α*x : x
 """
 struct LeakyReLU <: Model
     α::AbstractFloat
