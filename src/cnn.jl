@@ -93,17 +93,15 @@ end
 function (m::GenericConv)(x)
      n = ndims(x)
      if n == 4 || n==5
-         y = m.f(conv4(m.w,x;stride=m.stride,padding=m.padding,mode=m.mode,upscale=m.upscale,alpha=m.alpha) .+ m.b)
-         m.pool == nothing ? y : m.pool(y);
-     elseif n == 3; x1 = reshape(x,size(x)...,1)
-     elseif n == 2; x1 = reshape(x,size(x)...,1,1)
-     elseif n == 1; x1 = reshape(x,size(x)...,1,1,1)
-     else
-         error("Conv supports 1,2,3,4,5 D arrays only")
+     elseif n == 3; x = reshape(x,size(x)...,1)
+     elseif n == 2; x = reshape(x,size(x)...,1,1)
+     elseif n == 1; x = reshape(x,size(x)...,1,1,1)
+     else; error("Conv supports 1,2,3,4,5 D arrays only")
      end
-     y  = m.f(conv4(m.w,x1;stride=m.stride,padding=m.padding,mode=m.mode,upscale=m.upscale,alpha=m.alpha) .+ m.b)
+     y  = m.f(conv4(m.w,x;stride=m.stride,padding=m.padding,mode=m.mode,upscale=m.upscale,alpha=m.alpha) .+ m.b)
      yp = m.pool == nothing ? y : m.pool(y);
-     reshape(yp,size(yp)[1:n])
+
+     n > 3 ? yp : reshape(yp,size(yp)[1:n])
 end
 
 """

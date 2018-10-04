@@ -35,7 +35,7 @@ Prm(x)=Param(atype(x));   export Prm
 
 
 include("core.jl");       export Linear,Projection,Embed,Dense,BatchNorm
-include("nonlinear.jl");  export ReLU,Sigm,Tanh,LeakyReLU,ELU,Dropout,LogP,SoftMax,LogSumExp
+include("nonlinear.jl");  export ReLU,Sigm,Tanh,LeakyReLU,ELU,Dropout,LogSoftMax,SoftMax,LogSumExp
 include("loss.jl");       export CrossEntropyLoss
 include("cnn.jl");        export Pool,UnPool,DeConv,Conv
 include("special.jl");    export MLP
