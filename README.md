@@ -1,5 +1,5 @@
 # KnetLayers
-KnetLayers provides configurable deep learning layers for Knet, fostering your model development. You can use Knet and AutoGrad functionalities without adding them to current workspace.
+KnetLayers provides configurable deep learning layers for Knet, fostering your model development. You are able to use Knet and AutoGrad functionalities without adding them to current workspace.
 
 ## Example Usages
 ```JULIA  
