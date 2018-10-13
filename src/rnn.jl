@@ -75,7 +75,7 @@ see RNNOutput
 * cy=false   : if true returns c
 
 """
-abstract type AbstractRNN <: Model end
+abstract type AbstractRNN <: Layer end
 
 struct SRNN <: AbstractRNN
     embedding::Union{Nothing,Embed}

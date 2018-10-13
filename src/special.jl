@@ -17,7 +17,7 @@ Runs MLP with given input `x`. `prob` is the dropout probability.
 * `f=ReLU()`: activation function
 
 """
-struct MLP <: Model
+struct MLP <: Layer
      layers::Tuple{Vararg{Linear}}
      f
 end

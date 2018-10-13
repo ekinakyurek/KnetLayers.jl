@@ -4,7 +4,7 @@
 
 Rectified Linear Unit function.
 """
-struct ReLU <: Model
+struct ReLU <: Activation
 end
 (l::ReLU)(x) = relu.(x)
 
@@ -14,7 +14,7 @@ end
 
 Sigmoid function
 """
-struct Sigm <: Model
+struct Sigm <: Activation
 end
 (l::Sigm)(x) = sigm.(x)
 
@@ -24,7 +24,7 @@ end
 
 Tangent hyperbolic function
 """
-struct Tanh <: Model
+struct Tanh <: Activation
 end
 (l::Tanh)(x) = tanh.(x)
 
@@ -35,7 +35,7 @@ end
 
 Exponential Linear Unit nonlineariy.
 """
-struct ELU <: Model
+struct ELU <: Activation
 end
 (l::ELU)(x) = elu.(x)
 
@@ -43,7 +43,7 @@ end
     LeakyReLU(α=0.2)
     (l::LeakyReLU)(x) -> Computes x < 0 ? α*x : x
 """
-struct LeakyReLU <: Model
+struct LeakyReLU <: Activation
     α::AbstractFloat
     LeakyReLU(alpha::AbstractFloat=0.2) = new(alpha)
 end
@@ -54,7 +54,7 @@ end
 
 Dropout Layer. `p` is the droput probability.
 """
-struct Dropout <: Model
+struct Dropout <: Activation
     p::Real
     Dropout(p::Real=0.0) = new(p)
 end
@@ -69,7 +69,7 @@ Treat entries in x as as unnormalized log probabilities and return normalized lo
 dims is an optional argument, if not specified the normalization is over the whole x, otherwise the normalization is performed over the given dimensions. In
 particular, if x is a matrix, dims=1 normalizes columns of x and dims=2 normalizes rows of x.
 """
-struct LogSoftMax <: Model
+struct LogSoftMax <: Activation
     dims
 end
 LogSoftMax() = LogSoftMax(:)
@@ -84,7 +84,7 @@ Treat entries in x as as unnormalized scores and return softmax probabilities.
 dims is an optional argument, if not specified the normalization is over the whole x, otherwise the normalization is performed over the given dimensions. In
 particular, if x is a matrix, dims=1 normalizes columns of x and dims=2 normalizes rows of x.
 """
-struct SoftMax <: Model
+struct SoftMax <: Activation
     dims
 end
 SoftMax() = SoftMax(:)
@@ -99,7 +99,7 @@ SoftMax() = SoftMax(:)
   dims is an optional argument, if not specified the summation is over the whole x, otherwise the summation is performed over the given dimensions. In particular if x
   is a matrix, dims=1 sums columns of x and dims=2 sums rows of x.
 """
-struct LogSumExp <: Model
+struct LogSumExp <: Activation
     dims
 end
 LogSumExp() = LogSumExp(:)

@@ -34,12 +34,13 @@ settype!(t::Union{Type{KnetArray},Type{Array}}) = settype!(t{Float32})
 Prm(x)=Param(atype(x));   export Prm
 
 
-include("core.jl");       export Linear,Projection,Embed,Dense,BatchNorm
-include("nonlinear.jl");  export ReLU,Sigm,Tanh,LeakyReLU,ELU,Dropout,LogSoftMax,SoftMax,LogSumExp
-include("loss.jl");       export CrossEntropyLoss
-include("cnn.jl");        export Pool,UnPool,DeConv,Conv
-include("special.jl");    export MLP
-include("rnn.jl");        export RNN,SRNN,LSTM,GRU,RNNOutput,PadRNNOutput,PadSequenceArray
+include("core.jl");       
+include("primitives.jl"); export Linear,Projection,Embed,Dense,BatchNorm
+include("nonlinear.jl");   export ReLU,Sigm,Tanh,LeakyReLU,ELU,Dropout,LogSoftMax,SoftMax,LogSumExp
+include("loss.jl");        export CrossEntropyLoss
+include("cnn.jl");         export Pool,UnPool,DeConv,Conv
+include("special.jl");     export MLP
+include("rnn.jl");         export RNN,SRNN,LSTM,GRU,RNNOutput,PadRNNOutput,PadSequenceArray
 
 
 end # module

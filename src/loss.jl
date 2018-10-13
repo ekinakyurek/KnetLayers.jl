@@ -13,7 +13,7 @@ elseif dims==2
 * size(scores) = [B,T1,T2,...],C
 * size(answers)= [B,T1,T2,...]
 """
-struct CrossEntropyLoss <: Model
+struct CrossEntropyLoss <: Loss
     dims::Int
 end
 CrossEntropyLoss() = CrossEntropyLoss(1)
