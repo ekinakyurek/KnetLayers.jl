@@ -28,13 +28,13 @@ end
 
 """
 
-    SRNN(inputSize,hiddenSize;activation=:relu,options...)
-    LSTM(inputSize,hiddenSize;options...)
-    GRU(inputSize,hiddenSize;options...)
+    SRNN(;input=inputSize, hidden=hiddenSize, activation=:relu, options...)
+    LSTM(;input=inputSize, hidden=hiddenSize, options...)
+    GRU(;input=inputSize, hidden=hiddenSize, options...)
 
-    (1) (l::T)(x;kwargs...) where T<:AbstractRNN
-    (2) (l::T)(x::Array{Int};batchSizes=nothing,kwargs...) where T<:AbstractRNN
-    (3) (l::T)(x::Vector{Vector{Int}};sorted=false,kwargs...) where T<:AbstractRNN
+    (1) (l::T)(x; kwargs...) where T<:AbstractRNN
+    (2) (l::T)(x::Array{Int}; batchSizes=nothing, kwargs...) where T<:AbstractRNN
+    (3) (l::T)(x::Vector{Vector{Int}}; sorted=false, kwargs...) where T<:AbstractRNN
 
 All RNN layers has above forward run(1,2,3) functionalities.
 
@@ -60,12 +60,12 @@ see RNNOutput
 * `bidirectional=false`: Create a bidirectional RNN if `true`.
 * `dropout=0`: Dropout probability. Ignored if `numLayers==1`.
 * `skipInput=false`: Do not multiply the input with a matrix if `true`.
-* `dataType=Float32`: Data type to use for weights.
+* `dataType=eltype(KnetLayers.arrtype)`: Data type to use for weights. Default is Float32.
 * `algo=0`: Algorithm to use, see CUDNN docs for details.
 * `seed=0`: Random number seed for dropout. Uses `time()` if 0.
 * `winit=xavier`: Weight initialization method for matrices.
 * `binit=zeros`: Weight initialization method for bias vectors.
-* `usegpu=(gpu()>=0)`: GPU used by default if one exists.
+* `usegpu=(KnetLayers.arrtype <: KnetArray)`: GPU used by default if one exists.
 
 # Keywords
 
@@ -75,7 +75,7 @@ see RNNOutput
 * cy=false   : if true returns c
 
 """
-abstract type AbstractRNN <: Model end
+AbstractRNN
 
 struct SRNN <: AbstractRNN
     embedding::Union{Nothing,Embed}
@@ -83,9 +83,9 @@ struct SRNN <: AbstractRNN
     specs
     gatesview::Dict
 end
-function SRNN(input::Int,hidden::Int;embed=nothing,activation=:relu,o...)
+function SRNN(;input::Int, hidden::Int, embed=nothing, activation=:relu, usegpu=(arrtype <: KnetArray), dataType=eltype(arrtype), o...)
     embedding,inputSize = _getEmbed(input,embed)
-    r,w = rnninit(inputSize,hidden;rnnType=activation,o...)
+    r,w = rnninit(inputSize,hidden;rnnType=activation, usegpu=usegpu, dataType=dataType, o...)
     gatesview  = Dict()
     p = param(w)
     for l=1:r.numLayers, (ih,ihid) in ihmaps, (ty,param) in wbmaps
@@ -93,7 +93,7 @@ function SRNN(input::Int,hidden::Int;embed=nothing,activation=:relu,o...)
     end
     SRNN(embedding,p,r,gatesview)
 end
-(m::SRNN)(x,h...;o...) = _box(_forw(m,x,h...;o...))
+(m::SRNN)(x,h...;o...) = RNNOutput(_forw(m,x,h...;o...)...)
 
 const lstmmaps = Dict(:i=>(1,5),:f=>(2,6),:n=>(3,7),:o=>(4,8))
 const ihmaps   = Dict(:i=>1,:h=>2)
@@ -105,9 +105,10 @@ struct LSTM <: AbstractRNN
     specs
     gatesview::Dict
 end
-function LSTM(input::Int,hidden::Int;embed=nothing,o...)
+
+function LSTM(;input::Int, hidden::Int, embed=nothing, usegpu=(arrtype <: KnetArray), dataType=eltype(arrtype), o...)
     embedding,inputSize = _getEmbed(input,embed)
-    r,w = rnninit(inputSize,hidden;rnnType=:lstm,o...)
+    r,w = rnninit(inputSize,hidden; rnnType=:lstm, usegpu=usegpu, dataType=dataType, o...)
     gatesview  = Dict()
     p = param(w)
     for l=1:r.numLayers,(g,id) in lstmmaps,(ih,ihid) in ihmaps,(ty,param) in wbmaps
@@ -115,7 +116,7 @@ function LSTM(input::Int,hidden::Int;embed=nothing,o...)
     end
     LSTM(embedding,p,r,gatesview)
 end
-(m::LSTM)(x,h...;o...) = _box(_forw(m,x,h...;o...))
+(m::LSTM)(x,h...;o...) = RNNOutput(_forw(m,x,h...;o...)...)
 
 const grumaps  = Dict(:r=>(1,4),:u=>(2,5),:n=>(3,6))
 struct GRU <: AbstractRNN
@@ -125,9 +126,9 @@ struct GRU <: AbstractRNN
     gatesview::Dict
 end
 
-function GRU(input::Int,hidden::Int;embed=nothing,o...)
+function GRU(;input::Int, hidden::Int, embed=nothing, usegpu=(arrtype <: KnetArray), dataType=eltype(arrtype), o...)
     embedding,inputSize = _getEmbed(input,embed)
-    r,w = rnninit(inputSize,hidden;rnnType=:gru,o...)
+    r,w = rnninit(inputSize,hidden; rnnType=:gru, usegpu=usegpu, dataType=dataType, o...)
     gatesview  = Dict()
     p = param(w)
     for l=1:r.numLayers, (g,id) in grumaps, (ih,ihid) in ihmaps,(ty,param) in wbmaps
@@ -135,7 +136,7 @@ function GRU(input::Int,hidden::Int;embed=nothing,o...)
     end
     GRU(embedding,p,r,gatesview)
 end
-(m::GRU)(x,h...;o...) = _box(_forw(m,x,h...;o...))
+(m::GRU)(x,h...;o...) = RNNOutput(_forw(m,x,h...;o...)...)
 
 """
 
@@ -226,10 +227,7 @@ end
 
 _getEmbed(input::Int,embed::Nothing)   = (nothing,input)
 _getEmbed(input::Int,embed::Embed)     = size(embed.w,2) == input ? (embed,input) : error("dimension mismatch in your embedding")
-_getEmbed(input::Int,embed::Integer)   = (Embed(input,embed),embed)
-
-_box(y) = RNNOutput(y...)
-
+_getEmbed(input::Int,embed::Integer)   = (Embed(input=input,output=embed),embed)
 
 function _forw(rnn::AbstractRNN,seq::Array{T},h...;batchSizes=nothing,o...) where T<:Integer
     rnn.embedding === nothing && error("rnn has no embedding!")

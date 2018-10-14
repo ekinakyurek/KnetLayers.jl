@@ -1,4 +1,4 @@
-struct GenericPool <: Model
+struct GenericPool <: Layer
     window::Union{Int,Tuple{Vararg{Int}}}
     padding::Union{Int,Tuple{Vararg{Int}}}
     stride::Union{Int,Tuple{Vararg{Int}}}
@@ -64,7 +64,7 @@ Pool(;o...)   = GenericPool(;o...)
 """
 UnPool(;o...) = GenericPool(;unpool=true,o...)
 
-struct GenericConv <: Model
+struct GenericConv <: Layer
     w
     b
     f
@@ -75,10 +75,8 @@ struct GenericConv <: Model
     mode::Int
     alpha
 end
-GenericConv(h::Int;winit=xavier,binit=zeros,opts...)=GenericConv(Prm(winit(h,1,1,1)),binit(1,1,1,1);opts...)
-GenericConv(h::Int,w::Int;winit=xavier,binit=zeros,opts...)=GenericConv(Prm(winit(h,w,1,1)),binit(1,1,1,1);opts...)
-GenericConv(h::Int,w::Int,c::Int;winit=xavier,binit=zeros,opts...)=GenericConv(Prm(winit(h,w,c,1)),binit(1,1,1,1);opts...)
-GenericConv(h::Int,w::Int,c::Int,o::Int;winit=xavier,binit=zeros,opts...)=GenericConv(Prm(winit(h,w,c,o)),binit(1,1,o,1);opts...)
+GenericConv(;height::Int, width=1, channels=1, filters=1, winit=xavier, binit=zeros, opts...)=GenericConv(param(height,width,channels,filters;winit=winit),param(1,1,filters,1;winit=binit);opts...)
+
 function GenericConv(w,b;f=identity,stride=1,padding=0,mode=0,upscale=1,alpha=1,pool=nothing,unpool=nothing,deconv=false)
     if typeof(pool) <: Union{Int,Tuple{Vararg{Int}}}
         genericpool = Pool(;window=pool)
@@ -105,7 +103,7 @@ function (m::GenericConv)(x)
 end
 
 """
-    Conv(h,[w,c,o];kwargs...)
+    Conv(height=filterHeight, width=filterWidth, channels=1, filter=1, kwargs...)
 
 Creates and convolutional layer according to given filter dimensions.
 
@@ -135,11 +133,11 @@ or an tuple with entries for each spatial dimension.
 * `handle`: handle to a previously created cuDNN context. Defaults to a Knet allocated handle.
 
 """
-Conv(x...;o...)   = GenericConv(x...;o...)
+Conv(;height::Int, width::Int, o...)   = GenericConv(;height=height, width=width, o...)
 
 
 """
-    DeConv(h,[w,c,o];kwargs...)
+    DeConv(height::Int, width=1, channels=1, filter=1, kwargs...)
 
 Creates and deconvolutional layer according to given filter dimensions.
 
@@ -168,4 +166,4 @@ or an tuple with entries for each spatial dimension.
 * `alpha=1`: can be used to scale the result.
 * `handle`: handle to a previously created cuDNN context. Defaults to a Knet allocated handle.
 """
-DeConv(x...;o...) = GenericConv(x...;deconv=true,o...)
+DeConv(;height::Int, width::Int, o...) = GenericConv(height=height, width=width, deconv=true,o...)

@@ -9,7 +9,7 @@ Pages = ["reference.md"]
 ## Core Layers
 
 ```@docs
-KnetLayers.Projection
+KnetLayers.Multiply
 KnetLayers.Embed   
 KnetLayers.Linear   
 KnetLayers.Dense   
