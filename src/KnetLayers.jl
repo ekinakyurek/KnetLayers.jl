@@ -25,10 +25,10 @@ julia> KnetLayers.dir("src")
 dir(path...) = joinpath(dirname(@__DIR__),path...)
 
 #Array type for paramater initialization
-atype = gpu()>=0 ? KnetArray{Float32} : Array{Float32}
+arrtype = gpu(0)>=0 ? KnetArray{Float32} : Array{Float32}
 #Setters for atype
-settype!(t::T) where T<:Type{KnetArray{V}} where V <: AbstractFloat = gpu()>=0 ? (global atype=t) : error("No GPU available")
-settype!(t::T) where T<:Type{Array{V}} where V <: AbstractFloat = global atype=t
+settype!(t::T) where T<:Type{KnetArray{V}} where V <: AbstractFloat = gpu()>=0 ? (global arrtype=t) : error("No GPU available")
+settype!(t::T) where T<:Type{Array{V}} where V <: AbstractFloat = global arrtype=t
 settype!(t::Union{Type{KnetArray},Type{Array}}) = settype!(t{Float32})
 #Param init function
 Prm(x)=Param(atype(x));   export Prm

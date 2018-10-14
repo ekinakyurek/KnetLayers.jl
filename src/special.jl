@@ -15,13 +15,19 @@ Runs MLP with given input `x`. `prob` is the dropout probability.
 * `winit=xavier`: weight initialization distribution
 * `bias=zeros`: bias initialization distribution
 * `f=ReLU()`: activation function
+* `atype=KnetLayers.arrtype` : array type for parameters.
+   Default value is KnetArray{Float32} if you have gpu device. Otherwise it is Array{Float32}
+
 
 """
 struct MLP <: Layer
      layers::Tuple{Vararg{Linear}}
      f
 end
-MLP(h::Int...;winit=xavier,binit=zeros,f=ReLU())=MLP(Linear.(h[1:end-1],h[2:end];winit=winit,binit=binit),f)
+function MLP(h::Int...; winit=xavier, binit=zeros, f=ReLU(), atype=arrtype)
+    singlelayer(input,ouput) = Linear(input=input, output=ouput, winit=winit, binit=binit, atype=atype)
+    MLP(singlelayer.(h[1:end-1], h[2:end]),f)
+end
 function (m::MLP)(x;prob=0)
     for layer in m.layers
         x = layer(dropout(x,prob))
