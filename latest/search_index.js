@@ -57,11 +57,11 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "reference.html#KnetLayers.Projection",
+    "location": "reference.html#KnetLayers.Multiply",
     "page": "Reference",
-    "title": "KnetLayers.Projection",
+    "title": "KnetLayers.Multiply",
     "category": "type",
-    "text": "Projection(inputSize,projectSize;winit=xavier)\n\nCreates a projection layer according to given inputSize and projectSize.\n\n(m::Projection)(x) = m.w*x\n\nBy default parameters initialized with xavier, you can change it with winit argument\n\n\n\n\n\n"
+    "text": "Multiply(input=inputDimension, output=outputDimension, winit=xavier, atype=KnetLayers.arrtype)\n\nCreates a matrix multiplication layer based on inputDimension and outputDimension.     (m::Multiply) = m.w * x\n\nBy default parameters initialized with xavier, you may change it with winit argument.\n\nKeywords\n\ninput=inputDimension: input dimension\noutput=outputDimension: output dimension\nwinit=xavier: weight initialization distribution\natype=KnetLayers.arrtype : array type for parameters.   Default value is KnetArray{Float32} if you have gpu device. Otherwise it is Array{Float32}\n\n\n\n\n\n"
 },
 
 {
@@ -69,7 +69,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Reference",
     "title": "KnetLayers.Embed",
     "category": "type",
-    "text": "Embed(inputSize,embedSize;winit=xavier)\n\nCreates an embedding layer according to given inputSize and embedSize.\n\nBy default embedding parameters initialized with xavier, you can change it winit argument\n\n(m::Embed)(x::Array{T}) where T<:Integer\n(m::Embed)(x; keepsize=true)\n\nEmbed objects are callable with an input which is either and integer array (one hot encoding) or an N-dimensional matrix. For N-dimensional matrix, size(x,1)==inputSize\n\n\n\n\n\n"
+    "text": "Embed(input=inputSize, output=embedSize, winit=xavier, atype=KnetLayers.arrtype)\n\nCreates an embedding layer according to given inputSize and embedSize where inputSize is your number of unique items you want to embed, and embedSize is the size of output vectors. By default parameters initialized with xavier, you yam change it with winit argument.\n\n(m::Embed)(x::Array{T}) where T<:Integer\n(m::Embed)(x; keepsize=true)\n\nEmbed objects are callable with an input which is either and integer array (one hot encoding) or an N-dimensional matrix. For N-dimensional matrix, size(x,1)==inputSize\n\nKeywords\n\ninput=inputDimension: input dimension\noutput=embeddingDimension: output dimension\nwinit=xavier: weight initialization distribution\natype=KnetLayers.arrtype : array type for parameters.   Default value is KnetArray{Float32} if you have gpu device. Otherwise it is Array{Float32}\n\n\n\n\n\n"
 },
 
 {
@@ -77,7 +77,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Reference",
     "title": "KnetLayers.Linear",
     "category": "type",
-    "text": "Linear(inputSize,outputSize;kwargs...)\n(m::Linear)(x; keepsize=true) #forward run\n\nCreates and linear layer according to given inputSize and outputSize.\n\nBy default embedding parameters initialized with xavier, you can change it winit argument\n\nKeywords\n\nwinit=xavier: weight initialization distribution\nbias=zeros: bias initialization distribution\n\n\n\n\n\n"
+    "text": "Linear(input=inputSize, output=outputSize, winit=xavier, binit=zeros, atype=KnetLayers.arrtype)\n\nCreates and linear layer according to given inputSize and outputSize.\n\nKeywords\n\ninput=inputSize   input dimension\noutput=outputSize output dimension\nwinit=xavier: weight initialization distribution\nbias=zeros: bias initialization distribution\natype=KnetLayers.arrtype : array type for parameters.   Default value is KnetArray{Float32} if you have gpu device. Otherwise it is Array{Float32}\n\n\n\n\n\n"
 },
 
 {
@@ -85,7 +85,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Reference",
     "title": "KnetLayers.Dense",
     "category": "type",
-    "text": "Dense(inputSize,outputSize;kwargs...)\n(m::Dense)(x; keepsize=true) #forward run\n\nCreates and deense layer according to given inputSize and outputSize.\n\nKeywords\n\nwinit=xavier: weight initialization distribution\nbias=zeros: bias initialization distribution\nf=ReLU(): activation function\nkeepsize=true: if false ndims(y)=2 all dimensions other than first one\n\nsqueezed to second dimension\n\n\n\n\n\n"
+    "text": "Dense(input=inputSize, output=outputSize, activation=relu, winit=xavier, binit=zeros, atype=KnetLayers.arrtype)\n\nCreates and deense layer according to given input=inputSize and output=outputSize. If activation is nothing, it acts like a Linear Layer.\n\nKeywords\n\ninput=inputSize   input dimension\noutput=outputSize output dimension\nwinit=xaiver: weight initialization distribution\nbias=zeros:   bias initialization distribution\nactivation=relu  activation function or an  activation layer\natype=KnetLayers.arrtype : array type for parameters.  Default value is KnetArray{Float32} if you have gpu device. Otherwise it is Array{Float32}\n\n\n\n\n\n"
 },
 
 {
@@ -93,7 +93,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Reference",
     "title": "KnetLayers.BatchNorm",
     "category": "type",
-    "text": "BatchNorm(channels:Int;options...)\n(m::BatchNorm)(x;training=false) #forward run\n\nOptions\n\nmomentum=0.1: A real number between 0 and 1 to be used as the scale of\n\nlast mean and variance. The existing running mean or variance is multiplied by  (1-momentum).\n\n`mean=nothing\': The running mean.\nvar=nothing: The running variance.\nmeaninit=zeros: The function used for initialize the running mean. Should either be nothing or\n\nof the form (eltype, dims...)->data. zeros is a good option.\n\nvarinit=ones: The function used for initialize the runn\n\nKeywords\n\ntraining=nothing: When training is true, the mean and variance of x are used and moments\n\nargument is modified if it is provided. When training is false, mean and variance  stored in the moments argument are used. Default value is true when at least one  of x and params is AutoGrad.Value, false otherwise.\n\n\n\n\n\n"
+    "text": "BatchNorm(channels:Int;options...)\n(m::BatchNorm)(x;training=false) #forward run\n\nOptions\n\nmomentum=0.1: A real number between 0 and 1 to be used as the scale of\n\nlast mean and variance. The existing running mean or variance is multiplied by  (1-momentum).\n\n`mean=nothing\': The running mean.\nvar=nothing: The running variance.\nmeaninit=zeros: The function used for initialize the running mean. Should either be nothing or\n\nof the form (eltype, dims...)->data. zeros is a good option.\n\nvarinit=ones: The function used for initialize the run\nelementtype=eltype(KnetLayers.arrtype) : element type ∈ {Float32,Float64} for parameters. Default value is eltype(KnetLayers.arrtype)\n\nKeywords\n\ntraining=nothing: When training is true, the mean and variance of x are used and moments\n\nargument is modified if it is provided. When training is false, mean and variance  stored in the moments argument are used. Default value is true when at least one  of x and params is AutoGrad.Value, false otherwise.\n\n\n\n\n\n"
 },
 
 {
@@ -101,7 +101,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Reference",
     "title": "Core Layers",
     "category": "section",
-    "text": "KnetLayers.Projection\nKnetLayers.Embed   \nKnetLayers.Linear   \nKnetLayers.Dense   \nKnetLayers.BatchNorm   "
+    "text": "KnetLayers.Multiply\nKnetLayers.Embed   \nKnetLayers.Linear   \nKnetLayers.Dense   \nKnetLayers.BatchNorm   "
 },
 
 {
@@ -205,7 +205,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Reference",
     "title": "KnetLayers.Conv",
     "category": "function",
-    "text": "Conv(h,[w,c,o];kwargs...)\n\nCreates and convolutional layer according to given filter dimensions.\n\n(m::GenericConv)(x) #forward run\n\nIf m.w has dimensions (W1,W2,...,I,O) and x has dimensions (X1,X2,...,I,N), the result y will have dimensions (Y1,Y2,...,O,N) where\n\nYi=1+floor((Xi+2*padding[i]-Wi)/stride[i])\n\nHere I is the number of input channels, O is the number of output channels, N is the number of instances, and Wi,Xi,Yi are spatial dimensions. padding and stride are keyword arguments that can be specified as a single number (in which case they apply to all dimensions), or an tuple with entries for each spatial dimension.\n\nKeywords\n\nf=identity: nonlinear function applied after convolution\npool=nothing: Pooling layer or window size of pooling\nwinit=xavier: weight initialization distribution\nbias=zeros: bias initialization distribution\npadding=0: the number of extra zeros implicitly concatenated at the start and at the end of each dimension.\nstride=1: the number of elements to slide to reach the next filtering window.\nupscale=1: upscale factor for each dimension.\nmode=0: 0 for convolution and 1 for cross-correlation.\nalpha=1: can be used to scale the result.\nhandle: handle to a previously created cuDNN context. Defaults to a Knet allocated handle.\n\n\n\n\n\n"
+    "text": "Conv(height=filterHeight, width=filterWidth, channels=1, filter=1, kwargs...)\n\nCreates and convolutional layer according to given filter dimensions.\n\n(m::GenericConv)(x) #forward run\n\nIf m.w has dimensions (W1,W2,...,I,O) and x has dimensions (X1,X2,...,I,N), the result y will have dimensions (Y1,Y2,...,O,N) where\n\nYi=1+floor((Xi+2*padding[i]-Wi)/stride[i])\n\nHere I is the number of input channels, O is the number of output channels, N is the number of instances, and Wi,Xi,Yi are spatial dimensions. padding and stride are keyword arguments that can be specified as a single number (in which case they apply to all dimensions), or an tuple with entries for each spatial dimension.\n\nKeywords\n\nf=identity: nonlinear function applied after convolution\npool=nothing: Pooling layer or window size of pooling\nwinit=xavier: weight initialization distribution\nbias=zeros: bias initialization distribution\npadding=0: the number of extra zeros implicitly concatenated at the start and at the end of each dimension.\nstride=1: the number of elements to slide to reach the next filtering window.\nupscale=1: upscale factor for each dimension.\nmode=0: 0 for convolution and 1 for cross-correlation.\nalpha=1: can be used to scale the result.\nhandle: handle to a previously created cuDNN context. Defaults to a Knet allocated handle.\n\n\n\n\n\n"
 },
 
 {
@@ -213,7 +213,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Reference",
     "title": "KnetLayers.DeConv",
     "category": "function",
-    "text": "DeConv(h,[w,c,o];kwargs...)\n\nCreates and deconvolutional layer according to given filter dimensions.\n\n(m::GenericConv)(x) #forward run\n\nIf m.w has dimensions (W1,W2,...,I,O) and x has dimensions (X1,X2,...,I,N), the result y will have dimensions (Y1,Y2,...,O,N) where\n\nYi = Wi+stride[i](Xi-1)-2padding[i]\n\nHere I is the number of input channels, O is the number of output channels, N is the number of instances, and Wi,Xi,Yi are spatial dimensions. padding and stride are keyword arguments that can be specified as a single number (in which case they apply to all dimensions), or an tuple with entries for each spatial dimension.\n\nKeywords\n\nf=identity: nonlinear function applied after convolution\nunpool=nothing: Unpooling layer or window size of unpooling\nwinit=xavier: weight initialization distribution\nbias=zeros: bias initialization distribution\npadding=0: the nßumber of extra zeros implicitly concatenated at the start and at the end of each dimension.\nstride=1: the number of elements to slide to reach the next filtering window.\nupscale=1: upscale factor for each dimension.\nmode=0: 0 for convolution and 1 for cross-correlation.\nalpha=1: can be used to scale the result.\nhandle: handle to a previously created cuDNN context. Defaults to a Knet allocated handle.\n\n\n\n\n\n"
+    "text": "DeConv(height::Int, width=1, channels=1, filter=1, kwargs...)\n\nCreates and deconvolutional layer according to given filter dimensions.\n\n(m::GenericConv)(x) #forward run\n\nIf m.w has dimensions (W1,W2,...,I,O) and x has dimensions (X1,X2,...,I,N), the result y will have dimensions (Y1,Y2,...,O,N) where\n\nYi = Wi+stride[i](Xi-1)-2padding[i]\n\nHere I is the number of input channels, O is the number of output channels, N is the number of instances, and Wi,Xi,Yi are spatial dimensions. padding and stride are keyword arguments that can be specified as a single number (in which case they apply to all dimensions), or an tuple with entries for each spatial dimension.\n\nKeywords\n\nf=identity: nonlinear function applied after convolution\nunpool=nothing: Unpooling layer or window size of unpooling\nwinit=xavier: weight initialization distribution\nbias=zeros: bias initialization distribution\npadding=0: the nßumber of extra zeros implicitly concatenated at the start and at the end of each dimension.\nstride=1: the number of elements to slide to reach the next filtering window.\nupscale=1: upscale factor for each dimension.\nmode=0: 0 for convolution and 1 for cross-correlation.\nalpha=1: can be used to scale the result.\nhandle: handle to a previously created cuDNN context. Defaults to a Knet allocated handle.\n\n\n\n\n\n"
 },
 
 {
@@ -245,7 +245,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Reference",
     "title": "KnetLayers.AbstractRNN",
     "category": "type",
-    "text": "SRNN(inputSize,hiddenSize;activation=:relu,options...)\nLSTM(inputSize,hiddenSize;options...)\nGRU(inputSize,hiddenSize;options...)\n\n(1) (l::T)(x;kwargs...) where T<:AbstractRNN\n(2) (l::T)(x::Array{Int};batchSizes=nothing,kwargs...) where T<:AbstractRNN\n(3) (l::T)(x::Vector{Vector{Int}};sorted=false,kwargs...) where T<:AbstractRNN\n\nAll RNN layers has above forward run(1,2,3) functionalities.\n\n(1) x is an input array with size equals d,[B,T]\n\n(2) For this You need to have an RNN with embedding layer. x is an integer array and inputs coressponds one hot vector indices. You can give 2D array for minibatching as rows corresponds to one instance. You can give 1D array with minibatching by specifying batch batchSizes argument. Checkout Knet.rnnforw for this.\n\n(3) For this You need to have an RNN with embedding layer. x is an vector of integer vectors. Every integer vector corresponds to an instance. It automatically batches inputs. It is better to give inputs as sorted. If your inputs sorted you can make sorted argument true to increase performance.\n\nsee RNNOutput\n\noptions\n\nembed=nothing: embedding size or and embedding layer\nnumLayers=1: Number of RNN layers.\nbidirectional=false: Create a bidirectional RNN if true.\ndropout=0: Dropout probability. Ignored if numLayers==1.\nskipInput=false: Do not multiply the input with a matrix if true.\ndataType=Float32: Data type to use for weights.\nalgo=0: Algorithm to use, see CUDNN docs for details.\nseed=0: Random number seed for dropout. Uses time() if 0.\nwinit=xavier: Weight initialization method for matrices.\nbinit=zeros: Weight initialization method for bias vectors.\nusegpu=(gpu()>=0): GPU used by default if one exists.\n\nKeywords\n\nhx=nothing : initial hidden states\ncx=nothing : initial memory cells\nhy=false   : if true returns h\ncy=false   : if true returns c\n\n\n\n\n\n"
+    "text": "SRNN(;input=inputSize, hidden=hiddenSize, activation=:relu, options...)\nLSTM(;input=inputSize, hidden=hiddenSize, options...)\nGRU(;input=inputSize, hidden=hiddenSize, options...)\n\n(1) (l::T)(x; kwargs...) where T<:AbstractRNN\n(2) (l::T)(x::Array{Int}; batchSizes=nothing, kwargs...) where T<:AbstractRNN\n(3) (l::T)(x::Vector{Vector{Int}}; sorted=false, kwargs...) where T<:AbstractRNN\n\nAll RNN layers has above forward run(1,2,3) functionalities.\n\n(1) x is an input array with size equals d,[B,T]\n\n(2) For this You need to have an RNN with embedding layer. x is an integer array and inputs coressponds one hot vector indices. You can give 2D array for minibatching as rows corresponds to one instance. You can give 1D array with minibatching by specifying batch batchSizes argument. Checkout Knet.rnnforw for this.\n\n(3) For this You need to have an RNN with embedding layer. x is an vector of integer vectors. Every integer vector corresponds to an instance. It automatically batches inputs. It is better to give inputs as sorted. If your inputs sorted you can make sorted argument true to increase performance.\n\nsee RNNOutput\n\noptions\n\nembed=nothing: embedding size or and embedding layer\nnumLayers=1: Number of RNN layers.\nbidirectional=false: Create a bidirectional RNN if true.\ndropout=0: Dropout probability. Ignored if numLayers==1.\nskipInput=false: Do not multiply the input with a matrix if true.\ndataType=eltype(KnetLayers.arrtype): Data type to use for weights. Default is Float32.\nalgo=0: Algorithm to use, see CUDNN docs for details.\nseed=0: Random number seed for dropout. Uses time() if 0.\nwinit=xavier: Weight initialization method for matrices.\nbinit=zeros: Weight initialization method for bias vectors.\nusegpu=(KnetLayers.arrtype <: KnetArray): GPU used by default if one exists.\n\nKeywords\n\nhx=nothing : initial hidden states\ncx=nothing : initial memory cells\nhy=false   : if true returns h\ncy=false   : if true returns c\n\n\n\n\n\n"
 },
 
 {
@@ -285,7 +285,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Reference",
     "title": "KnetLayers.MLP",
     "category": "type",
-    "text": "MLP(h::Int...;kwargs...)\n\nCreates a multi layer perceptron according to given hidden states. First hidden state is equal to input size and the last one equal to output size.\n\n(m::MLP)(x;prob=0)\n\nRuns MLP with given input x. prob is the dropout probability.\n\nKeywords\n\nwinit=xavier: weight initialization distribution\nbias=zeros: bias initialization distribution\nf=ReLU(): activation function\n\n\n\n\n\n"
+    "text": "MLP(h::Int...;kwargs...)\n\nCreates a multi layer perceptron according to given hidden states. First hidden state is equal to input size and the last one equal to output size.\n\n(m::MLP)(x;prob=0)\n\nRuns MLP with given input x. prob is the dropout probability.\n\nKeywords\n\nwinit=xavier: weight initialization distribution\nbias=zeros: bias initialization distribution\nf=ReLU(): activation function\natype=KnetLayers.arrtype : array type for parameters.  Default value is KnetArray{Float32} if you have gpu device. Otherwise it is Array{Float32}\n\n\n\n\n\n"
 },
 
 {
