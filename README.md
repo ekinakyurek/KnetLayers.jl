@@ -1,6 +1,7 @@
 # KnetLayers
 
 [![](https://img.shields.io/badge/docs-latest-blue.svg)](https://ekinakyurek.github.io/KnetLayers.jl/latest) 
+[![](https://gitlab.com/JuliaGPU/KnetLayers.jl/badges/master/pipeline.svg)](https://gitlab.com/JuliaGPU/KnetLayers.jl/pipelines)
 [![](https://travis-ci.org/ekinakyurek/KnetLayers.jl.svg?branch=master)](https://travis-ci.org/ekinakyurek/KnetLayers.jl)
 
 KnetLayers provides configurable deep learning layers for Knet, fostering your model development. You are able to use Knet and AutoGrad functionalities without adding them to current workspace.
