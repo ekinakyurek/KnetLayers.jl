@@ -13,23 +13,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Home",
     "title": "Welcome to KnetLayers.jl\'s documentation!",
     "category": "section",
-    "text": ""
-},
-
-{
-    "location": "index.html#KnetLayers-1",
-    "page": "Home",
-    "title": "KnetLayers",
-    "category": "section",
-    "text": "KnetLayers provides configurable deep learning layers for Knet, fostering your model development. You can use Knet and AutoGrad functionalities without adding them to current workspace."
-},
-
-{
-    "location": "index.html#Example-Usages-1",
-    "page": "Home",
-    "title": "Example Usages",
-    "category": "section",
-    "text": "using KnetLayers\n#Instantiate an MLP model with random parameters\nmlp = MLP(100,50,20) # input size=100, hidden=50 and output=20\n#Do a prediction\nprediction = mlp(randn(Float32,100,1);activation=sigm) #defaul activation is relu\n\n#Instantiate Conv layer with random parameters\ncnn = Conv(3,3,3,10;padding=1,stride=1) # A conv filter with H=3,W=3,C=3,O=10\n#Filter your input\noutput = cnn(randn(Float32,224,224,3,1))\n\n#Instantiate an LSTM model\nlstm = LSTM(100,100;embed=50) #input size=100, hidden=100, embedding=50\n#You can use integers to represent one hot vectors\n#For example a pass over 5-Length sequence\ny,h,c,_ = lstm([3,2,1,4,5];hy=true,cy=true)\n#You can also use normal array inputs for low-level control\n#One iteration of LSTM\ny,h,c,_ = lstm(randn(100,1);hy=true,cy=true)\n#Pass over a 10-length sequence:\ny,h,c,_ = lstm(randn(100,1,10);hy=true,cy=true)\n#Pass over a mini-batch data which includes unequal length sequences\ny,h,c,_ = lstm([1,2,3,4],[5,6];sorted=true,hy=true,cy=true)\n#To see and modify rnn params in a structured view\nlstm.gatesview\n"
+    "text": "Pages = [\n \"readme.md\",\n]"
 },
 
 {
