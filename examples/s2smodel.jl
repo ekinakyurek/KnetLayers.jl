@@ -1,16 +1,26 @@
 using KnetLayers
-pad(p::Int,x::Array)=cat(p*ones(Int,size(x,1)),x;dims=2);
-pad(x::Array,p::Int)=cat(x,p*ones(Int,size(x,1));dims=2);
 
-struct S2S; encoder; decoder; output; loss; end # model definition
-model = S2S(LSTM(11,128;embed=9),LSTM(11,128;embed=9),Projection(128,11),CrossEntropyLoss())
-(m::S2S)(x)     = m.output(m.decoder(pad(10,sort(x,dims=2)), m.encoder(x;hy=true).hidden).y)
-predict(m,x)    = getindex.(argmax(Array(m(x)),dims=1)[1,:,:],1)
+leftpad(p::Int,x::Array)=cat(p*ones(Int,size(x,1)),x;dims=2);
+rightpad(x::Array,p::Int)=cat(x,p*ones(Int,size(x,1));dims=2);
+
+struct S2S
+    encoder
+    decoder
+    output
+    loss
+end
+
+model = S2S(LSTM(input=11,hidden=128,embed=9), 
+            LSTM(input=11,hidden=128,embed=9),
+            Multiply(input=128,output=11),CrossEntropyLoss()) 
+
+(m::S2S)(x)     = m.output(m.decoder(leftpad(10,sort(x,dims=2)), m.encoder(x;hy=true).hidden).y)
+predict(m,x)    = getindex.(argmax(Array(m(x)), dims=1)[1,:,:], 1)
 loss(m,x,ygold) = m.loss(m(x),ygold)
 
-dataxy(x) = (x,pad(sort(x,dims=2),11))
+dataxy(x) = (x,rightpad(sort(x, dims=2), 11))
 B, maxL= 64, 15; # Batch size and maximum sequence length for training
-data = [dataxy([rand(1:9) for j=1:B,k=1:rand(1:maxL)]) for i=1:10000]
+data = [dataxy([rand(1:9) for j=1:B, k=1:rand(1:maxL)]) for i=1:10000]
 train!(model,data;loss=loss,optimizer=Adam())
 
 
