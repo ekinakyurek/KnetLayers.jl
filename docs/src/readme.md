@@ -42,7 +42,7 @@ lstm.gatesview
 ## Exported Layers
 ```
 Core:
-  Projection, Linear, Embed, Dense
+  Multiply, Linear, Embed, Dense
 CNN
   Conv, DeConv, Pool, UnPool
 MLP
