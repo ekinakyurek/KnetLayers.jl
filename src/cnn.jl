@@ -65,9 +65,9 @@ Pool(;o...)   = GenericPool(;o...)
 UnPool(;o...) = GenericPool(;unpool=true,o...)
 
 struct GenericConv <: Layer
-    w
-    b
-    f
+    weight
+    bias
+    activation
     padding::Union{Int,Tuple{Vararg{Int}}}
     stride::Union{Int,Tuple{Vararg{Int}}}
     pool::Union{GenericPool,Nothing}
@@ -77,7 +77,7 @@ struct GenericConv <: Layer
 end
 GenericConv(;height::Int, width=1, channels=1, filters=1, winit=xavier, binit=zeros, opts...)=GenericConv(param(height,width,channels,filters;init=winit),param(1,1,filters,1;init=binit);opts...)
 
-function GenericConv(w,b;f=identity,stride=1,padding=0,mode=0,upscale=1,alpha=1,pool=nothing,unpool=nothing,deconv=false)
+function GenericConv(weight,bias;activation=ReLU(),stride=1,padding=0,mode=0,upscale=1,alpha=1,pool=nothing,unpool=nothing,deconv=false)
     if typeof(pool) <: Union{Int,Tuple{Vararg{Int}}}
         genericpool = Pool(;window=pool)
     elseif typeof(unpool) <: Union{Int,Tuple{Vararg{Int}}}
@@ -85,7 +85,7 @@ function GenericConv(w,b;f=identity,stride=1,padding=0,mode=0,upscale=1,alpha=1,
     else
         genericpool = nothing
     end
-    GenericConv(w,b,f,padding,stride,genericpool,upscale,mode,alpha)
+    GenericConv(weight,bias,activation,padding,stride,genericpool,upscale,mode,alpha)
 end
 
 function (m::GenericConv)(x)
@@ -96,9 +96,14 @@ function (m::GenericConv)(x)
      elseif n == 1; x = reshape(x,size(x)...,1,1,1)
      else; error("Conv supports 1,2,3,4,5 D arrays only")
      end
-     y  = m.f(conv4(m.w,x;stride=m.stride,padding=m.padding,mode=m.mode,upscale=m.upscale,alpha=m.alpha) .+ m.b)
-     yp = m.pool == nothing ? y : m.pool(y);
-
+     y  = conv4(m.weight,x;stride=m.stride,padding=m.padding,mode=m.mode,upscale=m.upscale,alpha=m.alpha) .+ m.bias
+     if m.activation!==nothing
+         ya = m.activation(y)
+     else
+         ya = y
+     end
+     yp = m.pool == nothing ? ya : m.pool(ya);
+    
      n > 3 ? yp : reshape(yp,size(yp)[1:n])
 end
 
@@ -121,7 +126,7 @@ keyword arguments that can be specified as a single number (in which case they a
 or an tuple with entries for each spatial dimension.
 
 # Keywords
-* `f=identity`: nonlinear function applied after convolution
+* `activation=identity`: nonlinear function applied after convolution
 * `pool=nothing`: Pooling layer or window size of pooling
 * `winit=xavier`: weight initialization distribution
 * `bias=zeros`: bias initialization distribution
@@ -155,7 +160,7 @@ keyword arguments that can be specified as a single number (in which case they a
 or an tuple with entries for each spatial dimension.
 
 # Keywords
-* `f=identity`: nonlinear function applied after convolution
+* `activation=identity`: nonlinear function applied after convolution
 * `unpool=nothing`: Unpooling layer or window size of unpooling
 * `winit=xavier`: weight initialization distribution
 * `bias=zeros`: bias initialization distribution

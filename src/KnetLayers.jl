@@ -25,7 +25,7 @@ julia> KnetLayers.dir("src")
 dir(path...) = joinpath(dirname(@__DIR__),path...)
 
 #Array type for paramater initialization
-arrtype = gpu(0)>=0 ? KnetArray{Float32} : Array{Float32}
+arrtype = gpu()>=0 ? KnetArray{Float32} : Array{Float32}
 #Setters for atype
 settype!(t::T) where T<:Type{KnetArray{V}} where V <: AbstractFloat = gpu()>=0 ? (global arrtype=t) : error("No GPU available")
 settype!(t::T) where T<:Type{Array{V}} where V <: AbstractFloat = global arrtype=t
@@ -35,7 +35,7 @@ Prm(x)=Param(atype(x));   export Prm
 
 
 include("core.jl");       
-include("primitives.jl");  export Multiply, Embed, Linear, Dense, BatchNorm
+include("primitive.jl");  export Multiply, Embed, Linear, Dense, BatchNorm
 include("nonlinear.jl");   export ReLU,Sigm,Tanh,LeakyReLU,ELU,Dropout,LogSoftMax,SoftMax,LogSumExp
 include("loss.jl");        export CrossEntropyLoss
 include("cnn.jl");         export Pool,UnPool,DeConv,Conv

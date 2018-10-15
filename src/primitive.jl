@@ -14,21 +14,21 @@ By default parameters initialized with xavier, you may change it with `winit` ar
    Default value is KnetArray{Float32} if you have gpu device. Otherwise it is Array{Float32}
 """
 struct Multiply <: Layer
-    w
+    weight
 end
 
 Multiply(;input::Int, output::Int, winit=xavier, atype=arrtype) =  Multiply(param(output, input; init=winit, atype=atype))
 
-(m::Multiply)(x::Array{T}) where T<:Integer = m.w[:,x] # Lookup (EmbedLayer)
+(m::Multiply)(x::Array{T}) where T<:Integer = m.weight[:,x] # Lookup (EmbedLayer)
 
 # TODO: Find a faster (or compound) way for tensor-product
 function (m::Multiply)(x; keepsize=true)
     if ndims(x) > 2 
         s = size(x)
-        y = m.w * reshape(x, s[1], prod(s[2:end]))
+        y = m.weight * reshape(x, s[1], prod(s[2:end]))
         return (keepsize ? reshape(y, size(y, 1), s[2:end]...) : y)
     else
-        return m.w * x
+        return m.weight * x
     end
 end
 
@@ -75,19 +75,19 @@ Creates and linear layer according to given `inputSize` and `outputSize`.
    Default value is KnetArray{Float32} if you have gpu device. Otherwise it is Array{Float32}
 """
 struct Linear <: Layer
-    w::Multiply
-    b
+    mult::Multiply
+    bias
 end
 
 function Linear(;input::Int, output::Int, winit=xavier, binit=zeros, atype=arrtype)
     Linear(Multiply(input=input, output=output, winit=winit, atype=atype),param(output, init=binit, atype=atype))
 end
 
-(m::Linear)(x) = m.w(x) .+ m.b
+(m::Linear)(x) = m.mult(x) .+ m.bias
 
 
 """
-    Dense(input=inputSize, output=outputSize, activation=relu, winit=xavier, binit=zeros, atype=KnetLayers.arrtype)
+    Dense(input=inputSize, output=outputSize, activation=ReLU(), winit=xavier, binit=zeros, atype=KnetLayers.arrtype)
 
 Creates and deense layer according to given `input=inputSize` and `output=outputSize`.
 If activation is `nothing`, it acts like a `Linear` Layer.
@@ -101,17 +101,15 @@ If activation is `nothing`, it acts like a `Linear` Layer.
    Default value is KnetArray{Float32} if you have gpu device. Otherwise it is Array{Float32}
 """
 struct Dense <: Layer
-    l::Linear
+    linear::Linear
     activation
 end
 
 function Dense(;input::Int, output::Int, activation=ReLU(), winit=xavier, binit=zeros, atype=arrtype)
-    activation == nothing && return Linear(input=input, output=output, winit=winit, binit=binit, atype=atype)
     Dense(Linear(input=input, output=output, winit=winit, binit=binit, atype=atype), activation)
 end
 
-(m::Dense)(x) = m.activation(m.l(x))
-
+(m::Dense)(x) = m.activation===nothing ? m.linear(x) : m.activation(m.linear(x))
 
 
 """
