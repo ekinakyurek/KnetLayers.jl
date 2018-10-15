@@ -75,7 +75,7 @@ struct GenericConv <: Layer
     mode::Int
     alpha
 end
-GenericConv(;height::Int, width=1, channels=1, filters=1, winit=xavier, binit=zeros, opts...)=GenericConv(param(height,width,channels,filters;winit=winit),param(1,1,filters,1;winit=binit);opts...)
+GenericConv(;height::Int, width=1, channels=1, filters=1, winit=xavier, binit=zeros, opts...)=GenericConv(param(height,width,channels,filters;init=winit),param(1,1,filters,1;init=binit);opts...)
 
 function GenericConv(w,b;f=identity,stride=1,padding=0,mode=0,upscale=1,alpha=1,pool=nothing,unpool=nothing,deconv=false)
     if typeof(pool) <: Union{Int,Tuple{Vararg{Int}}}

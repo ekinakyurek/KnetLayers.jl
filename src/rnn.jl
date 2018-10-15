@@ -245,7 +245,7 @@ function _forw(rnn::AbstractRNN,batch::Vector{Vector{T}},h...;sorted=true,o...) 
         rev = sortperm(v;alg=MergeSort)
         batch= batch[v]
     end
-    tokens,bsizes = pack_sequence(batch)
+    tokens,bsizes = _pack_sequence(batch)
     y,hidden,memory,_  = _forw(rnn,tokens,h...;batchSizes=bsizes,o...)
     inds    = _batchSizes2indices(bsizes);
     if !sorted

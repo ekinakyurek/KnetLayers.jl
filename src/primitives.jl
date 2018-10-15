@@ -96,21 +96,21 @@ If activation is `nothing`, it acts like a `Linear` Layer.
 * `output=outputSize` output dimension
 * `winit=xaiver`: weight initialization distribution
 * `bias=zeros`:   bias initialization distribution
-* `activation=relu`  activation function or an  activation layer
+* `activation=ReLU()`  activation function(it does not broadcast) or an  activation layer
 * `atype=KnetLayers.arrtype` : array type for parameters.
    Default value is KnetArray{Float32} if you have gpu device. Otherwise it is Array{Float32}
 """
 struct Dense <: Layer
     l::Linear
-    f
+    activation
 end
 
-function Dense(;input::Int, output::Int, activation=relu, winit=xavier, binit=zeros, atype=arrtype)
+function Dense(;input::Int, output::Int, activation=ReLU(), winit=xavier, binit=zeros, atype=arrtype)
     activation == nothing && return Linear(input=input, output=output, winit=winit, binit=binit, atype=atype)
     Dense(Linear(input=input, output=output, winit=winit, binit=binit, atype=atype), activation)
 end
 
-(m::Dense)(x) = m.f.(m.l(x))
+(m::Dense)(x) = m.activation(m.l(x))
 
 
 
