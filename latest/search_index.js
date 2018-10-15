@@ -85,7 +85,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Reference",
     "title": "KnetLayers.Dense",
     "category": "type",
-    "text": "Dense(input=inputSize, output=outputSize, activation=relu, winit=xavier, binit=zeros, atype=KnetLayers.arrtype)\n\nCreates and deense layer according to given input=inputSize and output=outputSize. If activation is nothing, it acts like a Linear Layer.\n\nKeywords\n\ninput=inputSize   input dimension\noutput=outputSize output dimension\nwinit=xaiver: weight initialization distribution\nbias=zeros:   bias initialization distribution\nactivation=relu  activation function or an  activation layer\natype=KnetLayers.arrtype : array type for parameters.  Default value is KnetArray{Float32} if you have gpu device. Otherwise it is Array{Float32}\n\n\n\n\n\n"
+    "text": "Dense(input=inputSize, output=outputSize, activation=relu, winit=xavier, binit=zeros, atype=KnetLayers.arrtype)\n\nCreates and deense layer according to given input=inputSize and output=outputSize. If activation is nothing, it acts like a Linear Layer.\n\nKeywords\n\ninput=inputSize   input dimension\noutput=outputSize output dimension\nwinit=xaiver: weight initialization distribution\nbias=zeros:   bias initialization distribution\nactivation=ReLU()  activation function(it does not broadcast) or an  activation layer\natype=KnetLayers.arrtype : array type for parameters.  Default value is KnetArray{Float32} if you have gpu device. Otherwise it is Array{Float32}\n\n\n\n\n\n"
 },
 
 {
@@ -285,7 +285,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Reference",
     "title": "KnetLayers.MLP",
     "category": "type",
-    "text": "MLP(h::Int...;kwargs...)\n\nCreates a multi layer perceptron according to given hidden states. First hidden state is equal to input size and the last one equal to output size.\n\n(m::MLP)(x;prob=0)\n\nRuns MLP with given input x. prob is the dropout probability.\n\nKeywords\n\nwinit=xavier: weight initialization distribution\nbias=zeros: bias initialization distribution\nf=ReLU(): activation function\natype=KnetLayers.arrtype : array type for parameters.  Default value is KnetArray{Float32} if you have gpu device. Otherwise it is Array{Float32}\n\n\n\n\n\n"
+    "text": "MLP(h::Int...;kwargs...)\n\nCreates a multi layer perceptron according to given hidden states. First hidden state is equal to input size and the last one equal to output size.\n\n(m::MLP)(x;prob=0)\n\nRuns MLP with given input x. prob is the dropout probability.\n\nKeywords\n\nwinit=xavier: weight initialization distribution\nbias=zeros: bias initialization distribution\nactivation=ReLU(): activation layer or function\natype=KnetLayers.arrtype : array type for parameters.  Default value is KnetArray{Float32} if you have gpu device. Otherwise it is Array{Float32}\n\n\n\n\n\n"
 },
 
 {
