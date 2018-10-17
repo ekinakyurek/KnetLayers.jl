@@ -10,7 +10,7 @@ makedocs(
     doctest = true,
     pages = Any[ # Compat: `Any` for 0.4 compat
         "Home" => "index.md",
-        "Manual" => Any[
+        "Function Documentation" => Any[
             "reference.md",
         ],
     ],

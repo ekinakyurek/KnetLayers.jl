@@ -80,7 +80,7 @@ predict(m,x)    = getindex.(argmax(Array(m(x)), dims=1)[1,:,:], 1)
 loss(m,x,ygold) = m.loss(m(x),ygold)
 
 # create sorting data
-# 11 isused as start and stop token.
+# 10 is used as start token and 11 is stop token.
 dataxy(x) = (x,rightpad(sort(x, dims=2), 11))
 B, maxL= 64, 15; # Batch size and maximum sequence length for training
 data = [dataxy([rand(1:9) for j=1:B, k=1:rand(1:maxL)]) for i=1:10000]
