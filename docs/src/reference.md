@@ -34,6 +34,8 @@ KnetLayers.LogSumExp
 
 ```@docs
 KnetLayers.CrossEntropyLoss
+KnetLayers.BCELoss
+KnetLayers.LogisticLoss
 ```
 
 ## Convolutional Layers

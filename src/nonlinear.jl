@@ -54,10 +54,10 @@ end
 
 Dropout Layer. `p` is the droput probability.
 """
-struct Dropout <: Activation
+mutable struct Dropout <: Activation
     p::Real
-    Dropout(p::Real=0.0) = new(p)
 end
+Dropout(;p=0) = Dropout(p)
 (l::Dropout)(x) = dropout(x,l.p)
 
 """
@@ -72,7 +72,7 @@ particular, if x is a matrix, dims=1 normalizes columns of x and dims=2 normaliz
 struct LogSoftMax <: Activation
     dims
 end
-LogSoftMax() = LogSoftMax(:)
+LogSoftMax(;dims=:) = LogSoftMax(dims)
 (l::LogSoftMax)(x) = logp(x;dims=l.dims)
 
 """
@@ -87,7 +87,7 @@ particular, if x is a matrix, dims=1 normalizes columns of x and dims=2 normaliz
 struct SoftMax <: Activation
     dims
 end
-SoftMax() = SoftMax(:)
+SoftMax(;dims=:) = SoftMax(dims)
 (l::SoftMax)(x) = exp.(logp(x;dims=l.dims))
 
 """
@@ -102,5 +102,5 @@ SoftMax() = SoftMax(:)
 struct LogSumExp <: Activation
     dims
 end
-LogSumExp() = LogSumExp(:)
+LogSumExp(;dims=:) = LogSumExp(dims)
 (l::LogSumExp)(x) = logsumexp(x;dims=l.dims)

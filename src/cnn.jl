@@ -75,7 +75,7 @@ struct GenericConv <: Layer
     mode::Int
     alpha
 end
-GenericConv(;height::Int, width=1, channels=1, filters=1, winit=xavier, binit=zeros, opts...)=GenericConv(param(height,width,channels,filters;init=winit),param(1,1,filters,1;init=binit);opts...)
+GenericConv(;height::Int, width=1, channels=1, filters=1, winit=xavier, binit=zeros, atype=arrtype, opts...)=GenericConv(param(height,width,channels,filters;init=winit,atype=atype),param(1,1,filters,1;init=binit,atype=atype);opts...)
 
 function GenericConv(weight,bias;activation=ReLU(),stride=1,padding=0,mode=0,upscale=1,alpha=1,pool=nothing,unpool=nothing,deconv=false)
     if typeof(pool) <: Union{Int,Tuple{Vararg{Int}}}
@@ -103,7 +103,7 @@ function (m::GenericConv)(x)
          ya = y
      end
      yp = m.pool == nothing ? ya : m.pool(ya);
-    
+
      n > 3 ? yp : reshape(yp,size(yp)[1:n])
 end
 
