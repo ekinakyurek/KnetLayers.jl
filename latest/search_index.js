@@ -13,13 +13,37 @@ var documenterSearchIndex = {"docs": [
     "page": "Home",
     "title": "Welcome to KnetLayers.jl\'s documentation!",
     "category": "section",
-    "text": "Pages = [\n \"readme.md\",\n]"
+    "text": "(Image: ) (Image: ) (Image: ) (Image: codecov)KnetLayers provides configurable deep learning layers for Knet, fostering your model development. You are able to use Knet and AutoGrad functionalities without adding them to current workspace."
 },
 
 {
-    "location": "index.html#Manual-1",
+    "location": "index.html#Example-Layer-Usages-1",
     "page": "Home",
-    "title": "Manual",
+    "title": "Example Layer Usages",
+    "category": "section",
+    "text": "using KnetLayers\n\n#Instantiate an MLP model with random parameters\nmlp = MLP(100,50,20; activation=Sigm()) # input size=100, hidden=50 and output=20\n\n#Do a prediction with the mlp model\nprediction = mlp(randn(Float32,100,1))\n\n#Instantiate a convolutional layer with random parameters\ncnn = Conv(height=3, width=3, channels=3, filters=10, padding=1, stride=1) # A conv layer\n\n#Filter your input with the convolutional layer\noutput = cnn(randn(Float32,224,224,3,1))\n\n#Instantiate an LSTM model\nlstm = LSTM(input=100, hidden=100, embed=50)\n\n#You can use integers to represent one-hot vectors.\n#Each integer corresponds to vocabulary index of corresponding element in your data.\n\n#For example a pass over 5-Length sequence\nrnnoutput = lstm([3,2,1,4,5];hy=true,cy=true)\n\n#After you get the output, you may acces to hidden states and\n#intermediate hidden states produced by the lstm model\nrnnoutput.y\nrnnoutput.hidden\nrnnoutput.memory\n\n#You can also use normal array inputs for low-level control\n#One iteration of LSTM with a random input\nrnnoutput = lstm(randn(100,1);hy=true,cy=true)\n\n#Pass over a random 10-length sequence:\nrnnoutput = lstm(randn(100,1,10);hy=true,cy=true)\n\n#Pass over a mini-batch data which includes unequal length sequences\nrnnoutput = lstm([[1,2,3,4],[5,6]];sorted=true,hy=true,cy=true)\n\n#To see and modify rnn params in a structured view\nlstm.gatesview"
+},
+
+{
+    "location": "index.html#Example-Model-1",
+    "page": "Home",
+    "title": "Example Model",
+    "category": "section",
+    "text": "An example of sequence to sequence models which learns sorting integer numbers.using KnetLayers\n\nstruct S2S # model definition\n    encoder\n    decoder\n    output\n    loss\nend\n# initialize model\nmodel = S2S(LSTM(input=11,hidden=128,embed=9),\n            LSTM(input=11,hidden=128,embed=9),\n            Multiply(input=128,output=11),\n            CrossEntropyLoss())\n\n# Helper functions for padding\nleftpad(p::Int,x::Array)=cat(p*ones(Int,size(x,1)),x;dims=2)\nrightpad(x::Array,p::Int)=cat(x,p*ones(Int,size(x,1));dims=2)\n\n# forward functions\n(m::S2S)(x)     = m.output(m.decoder(leftpad(10,sort(x,dims=2)), m.encoder(x;hy=true).hidden).y)\npredict(m,x)    = getindex.(argmax(Array(m(x)), dims=1)[1,:,:], 1)\nloss(m,x,ygold) = m.loss(m(x),ygold)\n\n# create sorting data\n# 11 isused as start and stop token.\ndataxy(x) = (x,rightpad(sort(x, dims=2), 11))\nB, maxL= 64, 15; # Batch size and maximum sequence length for training\ndata = [dataxy([rand(1:9) for j=1:B, k=1:rand(1:maxL)]) for i=1:10000]\n\n#train your model\ntrain!(model,data;loss=loss,optimizer=Adam())\n\n\"julia> predict(model,[3 2 1 4 5 9 3 5 6 6 1 2 5;])\n1×14 Array{Int64,2}:\n 1  2  2  2  3  4  4  5  5  5  6  7  9  11\n\njulia> sort([3 2 1 4 5 9 3 5 6 6 1 2 5;];dims=2)\n1×13 Array{Int64,2}:\n 1  1  2  2  3  3  4  5  5  5  6  6  9\n\""
+},
+
+{
+    "location": "index.html#Exported-Layers-1",
+    "page": "Home",
+    "title": "Exported Layers",
+    "category": "section",
+    "text": "Core:\n  Multiply, Linear, Embed, Dense\nCNN\n  Conv, DeConv, Pool, UnPool\nMLP\nRNN:\n  LSTM, GRU, SRNN\nLoss:\n  CrossEntropyLoss, BCELoss, LogisticLoss\nNonLinear:\n  Sigm, Tanh, ReLU, ELU\n  LogSoftMax, LogSumExp, SoftMax,\n  Dropout"
+},
+
+{
+    "location": "index.html#Function-Documentation-1",
+    "page": "Home",
+    "title": "Function Documentation",
     "category": "section",
     "text": "Pages = [\n \"reference.md\",\n]"
 },
@@ -173,7 +197,23 @@ var documenterSearchIndex = {"docs": [
     "page": "Reference",
     "title": "KnetLayers.CrossEntropyLoss",
     "category": "type",
-    "text": "CrossEntropyLoss(dims=1)\n(l::CrossEntropyLoss)(scores, answers::Array{<:Integer})\n\nCalculates negative log likelihood error on your predicted scores. answers should be integers corresponding to correct class indices. If an answer is 0, loss from that answer will not be included. This is usefull feature when you are working with unequal length sequences.\n\nif dims==1\n\nsize(scores) = C,[B,T1,T2,...]\nsize(answers)= [B,T1,T2,...]\n\nelseif dims==2\n\nsize(scores) = [B,T1,T2,...],C\nsize(answers)= [B,T1,T2,...]\n\n\n\n\n\n"
+    "text": "CrossEntropyLoss(dims=1)\n(l::CrossEntropyLoss)(scores, answers)\n\nCalculates negative log likelihood error on your predicted scores. answers should be integers corresponding to correct class indices. If an answer is 0, loss from that answer will not be included. This is usefull feature when you are working with unequal length sequences.\n\nif dims==1\n\nsize(scores) = C,[B,T1,T2,...]\nsize(answers)= [B,T1,T2,...]\n\nelseif dims==2\n\nsize(scores) = [B,T1,T2,...],C\nsize(answers)= [B,T1,T2,...]\n\n\n\n\n\n"
+},
+
+{
+    "location": "reference.html#KnetLayers.BCELoss",
+    "page": "Reference",
+    "title": "KnetLayers.BCELoss",
+    "category": "type",
+    "text": "BCELoss(average=true)\n(l::BCELoss)(scores, answers)\nComputes binary cross entropy given scores(predicted values) and answer labels. answer values should be {0,1}, then it returns negative of\nmean|sum(answers * log(p) + (1-answers)*log(1-p)) where p is equal to 1/(1 + exp.(scores)). See also LogisticLoss.\n\n\n\n\n\n"
+},
+
+{
+    "location": "reference.html#KnetLayers.LogisticLoss",
+    "page": "Reference",
+    "title": "KnetLayers.LogisticLoss",
+    "category": "type",
+    "text": "LogisticLoss(average=true)\n(l::LogisticLoss)(scores, answers)\nComputes logistic loss given scores(predicted values) and answer labels. answer values should be {-1,1}, then it returns mean|sum(log(1 +\nexp(-answers*scores))). See also `BCELoss`.\n\n\n\n\n\n"
 },
 
 {
@@ -181,7 +221,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Reference",
     "title": "Loss Functions",
     "category": "section",
-    "text": "KnetLayers.CrossEntropyLoss"
+    "text": "KnetLayers.CrossEntropyLoss\nKnetLayers.BCELoss\nKnetLayers.LogisticLoss"
 },
 
 {
