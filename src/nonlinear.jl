@@ -58,7 +58,7 @@ mutable struct Dropout <: Activation
     p::Real
 end
 Dropout(;p=0) = Dropout(p)
-(l::Dropout)(x; training=true) = training ? dropout(x,l.p) : x
+(l::Dropout)(x; enable=true) = enable ? dropout(x,l.p) : x
 
 """
     LogSoftMax(dims=:)
