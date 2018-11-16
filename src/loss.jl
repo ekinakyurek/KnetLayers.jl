@@ -36,7 +36,7 @@ function findindices(y,a::AbstractArray{<:Integer}; dims=1)
         y2 = div(length(y),y1)
         if n != y2; throw(DimensionMismatch()); end
         @inbounds for (j,v) in enumerate(nonmask)
-            (!).(nonmask) && continue
+            !v && continue
             indices[j] = (j-1)*y1 + a[j]
         end
     elseif dims == 2               # instances in last dimension
@@ -44,6 +44,7 @@ function findindices(y,a::AbstractArray{<:Integer}; dims=1)
         y1 = div(length(y),y2)
         if n != y1; throw(DimensionMismatch()); end
         @inbounds for (j,v) in enumerate(nonmask)
+            !v && continue
             indices[j] = (a[j]-1)*y1 + j
         end
     else
