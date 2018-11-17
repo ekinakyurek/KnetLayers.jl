@@ -22,7 +22,7 @@ CrossEntropyLoss(;dims=1) = CrossEntropyLoss(dims)
 (l::CrossEntropyLoss)(y,answers::Array{<:Integer}; average=true) = nllmask(y, answers; dims=l.dims, average=average)
 
 function nllmask(y,a::AbstractArray{<:Integer}; dims=1, average=true)
-    indices = findindices(y,a,dims=dims)
+    indices = findindices(y, a, dims=dims)
     lp = logp(y,dims=dims)[indices]
     average ? -mean(lp) : -sum(lp)
 end
@@ -35,17 +35,21 @@ function findindices(y,a::AbstractArray{<:Integer}; dims=1)
         y1 = size(y,1)
         y2 = div(length(y),y1)
         if n != y2; throw(DimensionMismatch()); end
+        k = 1
         @inbounds for (j,v) in enumerate(nonmask)
             !v && continue
-            indices[j] = (j-1)*y1 + a[j]
+            indices[k] = (j-1)*y1 + a[j]
+            k += 1
         end
     elseif dims == 2               # instances in last dimension
         y2 = size(y,ndims(y))
         y1 = div(length(y),y2)
         if n != y1; throw(DimensionMismatch()); end
+        k = 1
         @inbounds for (j,v) in enumerate(nonmask)
             !v && continue
-            indices[j] = (a[j]-1)*y1 + j
+            indices[k] = (a[j]-1)*y1 + j
+            k += 1
         end
     else
         error("findindices only supports dims = 1 or 2")
