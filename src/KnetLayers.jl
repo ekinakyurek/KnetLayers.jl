@@ -7,11 +7,8 @@ export gpu,knetgc,KnetArray,relu,sigm,elu,invx,mat,
        logp, logsumexp, nll, bce, logistic, accuracy,zeroone,dropout,
        SGD, Sgd, Momentum, Nesterov, Adam, Adagrad, Adadelta, Rmsprop, update!, optimizers,
        gaussian, xavier, bilinear, setseed,
-       hyperband, goldensection, cpucopy, gpucopy
-
-import AutoGrad: @diff,@zerograd,grad,cat1d
-export @diff,@zerograd,grad,cat1d
-
+       hyperband, goldensection, cpucopy, gpucopy,
+       value, grad, cat1d, Param, @diff, @zerograd
 
 """
     KnetLayers.dir(path...)
