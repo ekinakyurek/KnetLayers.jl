@@ -1,7 +1,7 @@
 using Statistics
 """
     CrossEntropyLoss(dims=1)
-    (l::CrossEntropyLoss)(scores, answers)
+    (l::CrossEntropyLoss)(scores, answers; average=true)
 Calculates negative log likelihood error on your predicted scores.
 `answers` should be integers corresponding to correct class indices.
 If an answer is 0, loss from that answer will not be included.
@@ -19,7 +19,7 @@ struct CrossEntropyLoss <: Loss
     dims::Int
 end
 CrossEntropyLoss(;dims=1) = CrossEntropyLoss(dims)
-(l::CrossEntropyLoss)(y,answers::Array{<:Integer})=nllmask(y, answers; dims=l.dims)
+(l::CrossEntropyLoss)(y,answers::Array{<:Integer}; average=true) = nllmask(y, answers; dims=l.dims, average=average)
 
 function nllmask(y,a::AbstractArray{<:Integer}; dims=1, average=true)
     indices = findindices(y,a,dims=dims)
