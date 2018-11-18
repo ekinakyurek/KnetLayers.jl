@@ -19,11 +19,11 @@ See `indices` and `PadRNNOutput` to get correct time outputs for a specific inst
 
 `indices` is corresponding instace indices for your `RNNOutput.y`. You may call `yi = y[:,indices[i]]`.
 """
-struct RNNOutput
-    y
-    hidden
-    memory
-    indices
+struct RNNOutput{T}
+    y::T
+    hidden::Union{Nothing,T}
+    memory::Union{Nothing,T}
+    indices::Union{Vector{Int},Nothing}
 end
 
 """
@@ -80,7 +80,7 @@ AbstractRNN
 struct SRNN <: AbstractRNN
     embedding::Union{Nothing,Embed}
     params
-    specs
+    specs::RNN
     gatesview::Dict
 end
 function SRNN(;input::Int, hidden::Int, embed=nothing, activation=:relu, usegpu=(arrtype <: KnetArray), dataType=eltype(arrtype), o...)
@@ -102,7 +102,7 @@ const wbmaps   = Dict(:w=>1,:b=>2)
 struct LSTM <: AbstractRNN
     embedding::Union{Nothing,Embed}
     params
-    specs
+    specs::RNN
     gatesview::Dict
 end
 
@@ -122,7 +122,7 @@ const grumaps  = Dict(:r=>(1,4),:u=>(2,5),:n=>(3,6))
 struct GRU <: AbstractRNN
     embedding::Union{Nothing,Embed}
     params
-    specs
+    specs::RNN
     gatesview::Dict
 end
 
