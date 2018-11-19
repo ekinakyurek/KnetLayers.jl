@@ -20,7 +20,7 @@ julia> KnetLayers.dir("src")
 ```
 """
 dir(path...) = joinpath(dirname(@__DIR__),path...)
-
+seed! = Knet.seed!
 #Array type for paramater initialization
 arrtype = gpu()>=0 ? KnetArray{Float32} : Array{Float32}
 #Setters for atype
