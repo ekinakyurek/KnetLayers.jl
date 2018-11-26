@@ -23,7 +23,7 @@ struct RNNOutput{T,V}
     y::T
     hidden::V
     memory::V
-    indices::Union{Vector{Int},Nothing}
+    indices::Union{Vector{Vector{Int}},Nothing}
 end
 
 
@@ -218,7 +218,7 @@ end
 
 function _batchSizes2indices(batchSizes)
     B = batchSizes[1]
-    inds = Any[]
+    inds = Vector{Int}[]
     for i=1:B
         ind = i.+cumsum(filter(x->(x>=i),batchSizes)[1:end-1])
         push!(inds,append!(Int[i],ind))
@@ -234,6 +234,7 @@ function _forw(rnn::AbstractRNN,seq::Array{T},h...;batchSizes=nothing,o...) wher
     rnn.embedding === nothing && error("rnn has no embedding!")
     ndims(seq) == 1 && batchSizes === nothing && (seq = reshape(seq,1,length(seq)))
     y,hidden,memory,_ = rnnforw(rnn.specs,rnn.params,rnn.embedding(seq),h...;batchSizes=batchSizes,o...)
+    return y,hidden,memory,nothing
 end
 
 function _forw(rnn::AbstractRNN,batch::Vector{Vector{T}},h...;sorted=true,o...) where T<:Integer
