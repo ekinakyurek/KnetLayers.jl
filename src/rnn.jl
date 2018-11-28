@@ -90,7 +90,7 @@ function SRNN(;input::Int, hidden::Int, embed=nothing, activation=:relu, usegpu=
     gatesview  = Dict()
     p = param(w)
     for l=1:r.numLayers, (ih,ihid) in ihmaps, (ty,param) in wbmaps
-        gatesview["$(ty)_$(ih)_l$(l)"] = rnnparam(r,p,l,ihid,param;useview=true)
+        gatesview["$(ty)_$(ih)_l$(l)"] = rnnparam(r,p.value,l,ihid,param;useview=true)
     end
     SRNN(embedding,p,r,gatesview)
 end
