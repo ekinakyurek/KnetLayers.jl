@@ -154,14 +154,14 @@ julia> PadSequenceArray([[1,2,3],[1,2],[1]])
  ```
 
 """
-function PadSequenceArray(batch::Vector{Vector{T}}) where T<:Integer
+function PadSequenceArray(batch::Vector{Vector{T}}; pad=0) where T<:Integer
     B      = length(batch)
     lngths = length.(batch)
     Tmax   = maximum(lngths)
     padded = Array{T}(undef,B,Tmax)
     for n = 1:B
         padded[n,1:lngths[n]] = batch[n]
-        padded[n,lngths[n]+1:end] .= 0
+        padded[n,lngths[n]+1:end] .= pad
     end
     return padded
 end
