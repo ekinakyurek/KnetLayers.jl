@@ -88,7 +88,7 @@ struct SoftMax <: Activation
     dims
 end
 SoftMax(;dims=:) = SoftMax(dims)
-(l::SoftMax)(x) = exp.(logp(x;dims=l.dims))
+(l::SoftMax)(x) = softmax(x;dims=l.dims)
 
 """
     LogSumExp(dims=:)

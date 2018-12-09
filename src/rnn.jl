@@ -87,10 +87,10 @@ end
 function SRNN(;input::Int, hidden::Int, embed=nothing, activation=:relu, usegpu=(arrtype <: KnetArray), dataType=eltype(arrtype), o...)
     embedding,inputSize = _getEmbed(input,embed)
     r,w = rnninit(inputSize,hidden;rnnType=activation, usegpu=usegpu, dataType=dataType, o...)
-    gatesview  = Dict()
     p = param(w)
-    for l=1:r.numLayers, (ih,ihid) in ihmaps, (ty,param) in wbmaps
-        gatesview["$(ty)_$(ih)_l$(l)"] = rnnparam(r,p.value,l,ihid,param;useview=true)
+    gatesview  = Dict{Symbol,Any}()
+    for l in 1:r.numLayers, d in 0:r.direction, (ih,ihid) in ihmaps, (ty,param) in wbmaps
+        gatesview[Symbol(ty,ih,l,d)] = rnnparam(r,p.value,(r.direction+1)*(l-1)+d+1,ihid,param;useview=true)
     end
     SRNN(embedding,p,r,gatesview)
 end
@@ -110,10 +110,10 @@ end
 function LSTM(;input::Int, hidden::Int, embed=nothing, usegpu=(arrtype <: KnetArray), dataType=eltype(arrtype), o...)
     embedding,inputSize = _getEmbed(input,embed)
     r,w = rnninit(inputSize,hidden; rnnType=:lstm, usegpu=usegpu, dataType=dataType, o...)
-    gatesview  = Dict()
+    gatesview  = Dict{Symbol,Any}()
     p = param(w)
-    for l=1:r.numLayers,(g,id) in lstmmaps,(ih,ihid) in ihmaps,(ty,param) in wbmaps
-        gatesview["$(ty)_$(ih)_$(g)_l$(l)"] = rnnparam(r,p.value,l,id[ihid],param;useview=true)
+    for l in 1:r.numLayers, d in 0:r.direction, (g,id) in lstmmaps, (ih,ihid) in ihmaps, (ty,param) in wbmaps
+        gatesview[Symbol(ty,ih,g,l,d)] = rnnparam(r,p.value,(r.direction+1)*(l-1)+d+1,id[ihid],param;useview=true)
     end
     LSTM(embedding,p,r,gatesview)
 end
@@ -130,10 +130,10 @@ end
 function GRU(;input::Int, hidden::Int, embed=nothing, usegpu=(arrtype <: KnetArray), dataType=eltype(arrtype), o...)
     embedding,inputSize = _getEmbed(input,embed)
     r,w = rnninit(inputSize,hidden; rnnType=:gru, usegpu=usegpu, dataType=dataType, o...)
-    gatesview  = Dict()
+    gatesview  = Dict{Symbol,Any}()
     p = param(w)
-    for l=1:r.numLayers, (g,id) in grumaps, (ih,ihid) in ihmaps,(ty,param) in wbmaps
-        gatesview["$(ty)_$(ih)_$(g)_l$(l)"] = rnnparam(r,p.value,l,id[ihid],param;useview=true)
+    for l in 1:r.numLayers, d in 0:r.direction, (g,id) in grumaps, (ih,ihid) in ihmaps,(ty,param) in wbmaps
+        gatesview[Symbol(ty,ih,g,l,d)] = rnnparam(r,p.value,(r.direction+1)*(l-1)+d+1,id[ihid],param;useview=true)
     end
     GRU(embedding,p,r,gatesview)
 end

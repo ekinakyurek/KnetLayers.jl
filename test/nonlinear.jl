@@ -9,7 +9,7 @@ include("header.jl")
      lgp = LogSoftMax()
      @test lgp(x) == logp(x)
      sft = SoftMax()
-     @test sft(x) == exp.(logp(x))
+     @test sft(x) == softmax(x)
      elu = ELU()
      elu(x)
      @test true
