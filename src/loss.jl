@@ -16,7 +16,7 @@ elseif dims==2
 """
 
 struct CrossEntropyLoss <: Loss
-    dims::Int
+    dims::Integer
 end
 CrossEntropyLoss(;dims=1) = CrossEntropyLoss(dims)
 (l::CrossEntropyLoss)(y,answers::Array{<:Integer}; average=true) = nllmask(y, answers; dims=l.dims, average=average)

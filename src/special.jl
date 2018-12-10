@@ -20,7 +20,7 @@ Runs MLP with given input `x`. `prob` is the dropout probability.
 
 
 """
-struct MLP <: Layer
+mutable struct MLP <: Layer
      layers::Tuple{Vararg{Linear}}
      activation
 end

@@ -78,7 +78,7 @@ see RNNOutput
 """
 AbstractRNN
 
-struct SRNN <: AbstractRNN
+mutable struct SRNN <: AbstractRNN
     embedding::Union{Nothing,Embed}
     params
     specs::RNN
@@ -100,7 +100,7 @@ const lstmmaps = Dict(:i=>(1,5),:f=>(2,6),:n=>(3,7),:o=>(4,8))
 const ihmaps   = Dict(:i=>1,:h=>2)
 const wbmaps   = Dict(:w=>1,:b=>2)
 
-struct LSTM <: AbstractRNN
+mutable struct LSTM <: AbstractRNN
     embedding::Union{Nothing,Embed}
     params
     specs::RNN
@@ -120,7 +120,7 @@ end
 (m::LSTM)(x,h...;o...) = RNNOutput(_forw(m,x,h...;o...)...)
 
 const grumaps  = Dict(:r=>(1,4),:u=>(2,5),:n=>(3,6))
-struct GRU <: AbstractRNN
+mutable struct GRU <: AbstractRNN
     embedding::Union{Nothing,Embed}
     params
     specs::RNN

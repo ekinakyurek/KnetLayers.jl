@@ -10,10 +10,10 @@ By default parameters initialized with xavier, you may change it with `winit` ar
 * `input=inputDimension`: input dimension
 * `output=outputDimension`: output dimension
 * `winit=xavier`: weight initialization distribution
-* `atype=KnetLayers.arrtype` : array type for parameters. 
+* `atype=KnetLayers.arrtype` : array type for parameters.
    Default value is KnetArray{Float32} if you have gpu device. Otherwise it is Array{Float32}
 """
-struct Multiply <: Layer
+mutable struct Multiply <: Layer
     weight
 end
 
@@ -23,7 +23,7 @@ Multiply(;input::Int, output::Int, winit=xavier, atype=arrtype) =  Multiply(para
 
 # TODO: Find a faster (or compound) way for tensor-product
 function (m::Multiply)(x; keepsize=true)
-    if ndims(x) > 2 
+    if ndims(x) > 2
         s = size(x)
         y = m.weight * reshape(x, s[1], prod(s[2:end]))
         return (keepsize ? reshape(y, size(y, 1), s[2:end]...) : y)
@@ -41,7 +41,7 @@ By default parameters initialized with xavier, you yam change it with `winit` ar
     (m::Embed)(x::Array{T}) where T<:Integer
     (m::Embed)(x; keepsize=true)
 
-    
+
 Embed objects are callable with an input which is either and integer array
 (one hot encoding) or an N-dimensional matrix. For N-dimensional matrix,
 `size(x,1)==inputSize`
@@ -51,7 +51,7 @@ Embed objects are callable with an input which is either and integer array
 * `input=inputDimension`: input dimension
 * `output=embeddingDimension`: output dimension
 * `winit=xavier`: weight initialization distribution
-* `atype=KnetLayers.arrtype` : array type for parameters. 
+* `atype=KnetLayers.arrtype` : array type for parameters.
    Default value is KnetArray{Float32} if you have gpu device. Otherwise it is Array{Float32}
 
 """
@@ -71,10 +71,10 @@ Creates and linear layer according to given `inputSize` and `outputSize`.
 * `output=outputSize` output dimension
 * `winit=xavier`: weight initialization distribution
 * `bias=zeros`: bias initialization distribution
-* `atype=KnetLayers.arrtype` : array type for parameters. 
+* `atype=KnetLayers.arrtype` : array type for parameters.
    Default value is KnetArray{Float32} if you have gpu device. Otherwise it is Array{Float32}
 """
-struct Linear <: Layer
+mutable struct Linear <: Layer
     mult::Multiply
     bias
 end
@@ -100,7 +100,7 @@ If activation is `nothing`, it acts like a `Linear` Layer.
 * `atype=KnetLayers.arrtype` : array type for parameters.
    Default value is KnetArray{Float32} if you have gpu device. Otherwise it is Array{Float32}
 """
-struct Dense <: Layer
+mutable struct Dense <: Layer
     linear::Linear
     activation
 end
@@ -132,7 +132,7 @@ of the form `(eltype, dims...)->data`. `zeros` is a good option.
  stored in the moments argument are used. Default value is true when at least one
  of x and params is AutoGrad.Value, false otherwise.
 """
-struct BatchNorm <: Layer
+mutable struct BatchNorm <: Layer
     params
     moments::Knet.BNMoments
 end
