@@ -43,7 +43,7 @@ end
     LeakyReLU(α=0.2)
     (l::LeakyReLU)(x) -> Computes x < 0 ? α*x : x
 """
-struct LeakyReLU <: Activation
+mutable struct LeakyReLU <: Activation
     α::AbstractFloat
     LeakyReLU(alpha::AbstractFloat=0.2) = new(alpha)
 end
@@ -70,7 +70,7 @@ dims is an optional argument, if not specified the normalization is over the who
 particular, if x is a matrix, dims=1 normalizes columns of x and dims=2 normalizes rows of x.
 """
 struct LogSoftMax <: Activation
-    dims
+    dims::Union{Integer,Colon}
 end
 LogSoftMax(;dims=:) = LogSoftMax(dims)
 (l::LogSoftMax)(x) = logp(x;dims=l.dims)
@@ -85,7 +85,7 @@ dims is an optional argument, if not specified the normalization is over the who
 particular, if x is a matrix, dims=1 normalizes columns of x and dims=2 normalizes rows of x.
 """
 struct SoftMax <: Activation
-    dims
+    dims::Union{Integer,Colon}
 end
 SoftMax(;dims=:) = SoftMax(dims)
 (l::SoftMax)(x) = softmax(x;dims=l.dims)
@@ -100,7 +100,7 @@ SoftMax(;dims=:) = SoftMax(dims)
   is a matrix, dims=1 sums columns of x and dims=2 sums rows of x.
 """
 struct LogSumExp <: Activation
-    dims
+    dims::Union{Integer,Colon}
 end
 LogSumExp(;dims=:) = LogSumExp(dims)
 (l::LogSumExp)(x) = logsumexp(x;dims=l.dims)

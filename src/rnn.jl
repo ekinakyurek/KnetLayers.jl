@@ -78,7 +78,7 @@ see RNNOutput
 """
 AbstractRNN
 
-struct SRNN <: AbstractRNN
+mutable struct SRNN <: AbstractRNN
     embedding::Union{Nothing,Embed}
     params
     specs::RNN
@@ -100,7 +100,7 @@ const lstmmaps = Dict(:i=>(1,5),:f=>(2,6),:n=>(3,7),:o=>(4,8))
 const ihmaps   = Dict(:i=>1,:h=>2)
 const wbmaps   = Dict(:w=>1,:b=>2)
 
-struct LSTM <: AbstractRNN
+mutable struct LSTM <: AbstractRNN
     embedding::Union{Nothing,Embed}
     params
     specs::RNN
@@ -120,7 +120,7 @@ end
 (m::LSTM)(x,h...;o...) = RNNOutput(_forw(m,x,h...;o...)...)
 
 const grumaps  = Dict(:r=>(1,4),:u=>(2,5),:n=>(3,6))
-struct GRU <: AbstractRNN
+mutable struct GRU <: AbstractRNN
     embedding::Union{Nothing,Embed}
     params
     specs::RNN
@@ -159,7 +159,7 @@ function PadSequenceArray(batch::Vector{Vector{T}}; pad=0) where T<:Integer
     lngths = length.(batch)
     Tmax   = maximum(lngths)
     padded = Array{T}(undef,B,Tmax)
-    for n = 1:B
+    @inbounds for n = 1:B
         padded[n,1:lngths[n]] = batch[n]
         padded[n,lngths[n]+1:end] .= pad
     end
@@ -182,7 +182,7 @@ function PadRNNOutput(s::RNNOutput)
     Tmax = maximum(lngths)
     mask = trues(d,B,Tmax)
     cw = []
-    for i=1:B
+    @inbounds for i=1:B
         y1 = s.y[:,s.indices[i]]
         df = Tmax-lngths[i]
         if df > 0
@@ -203,9 +203,9 @@ function _pack_sequence(batch::Vector{Vector{T}}) where T<:Integer
     bsizes = Int[]
     B      = length(batch)
     Lmax   = length(first(batch))
-    for t = 1:Lmax
+    @inbounds for t = 1:Lmax
         bs = 0
-        for k = 1:B
+        @inbounds for k = 1:B
             if t<=length(batch[k])
                 push!(tokens,batch[k][t])
                 bs += 1

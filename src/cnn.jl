@@ -1,4 +1,4 @@
-struct GenericPool <: Layer
+mutable struct GenericPool <: Layer
     window::Union{Int,Tuple{Vararg{Int}}}
     padding::Union{Int,Tuple{Vararg{Int}}}
     stride::Union{Int,Tuple{Vararg{Int}}}
@@ -64,7 +64,7 @@ Pool(;o...)   = GenericPool(;o...)
 """
 UnPool(;o...) = GenericPool(;unpool=true,o...)
 
-struct GenericConv <: Layer
+mutable struct GenericConv <: Layer
     weight
     bias
     activation
