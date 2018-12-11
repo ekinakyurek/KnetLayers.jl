@@ -11,7 +11,7 @@ end
 GenericPool(;window=2,padding=0,stride=window,mode=0,maxpoolingNanOpt=0,alpha=1,unpool=false) = GenericPool(window,padding,stride,mode,maxpoolingNanOpt,alpha,unpool)
 
 function (m::GenericPool)(x)
-     forw = x.unpool ? pool : unpool
+     forw = m.unpool ? pool : unpool
      forw(x;window=m.window,padding=m.padding,stride=m.stride,mode=m.mode,maxpoolingNanOpt=m.maxpoolingNanOpt,alpha=m.alpha)
 end
 
