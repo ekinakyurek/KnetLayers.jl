@@ -84,7 +84,7 @@ function Filtering{T}(;height::Integer, width::Integer, io=1=>1,
 end
 
 Filtering{T}(w, b, activation; stride=1, padding=0, mode=0, upscale=1, alpha=1) where T =
-    Filtering{T}(w, b, activation, (stride=stride, upscal=upscale, mode=mode, alpha=alpha, padding=padding))
+    Filtering{T}(w, b, activation, (stride=stride, upscale=upscale, mode=mode, alpha=alpha, padding=padding))
 
 (m::Filtering{typeof(conv4)})(x) =
      postConv(m, conv4(m.weight, make4D(x); m.options...), ndims(x))
