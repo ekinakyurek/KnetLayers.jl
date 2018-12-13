@@ -28,7 +28,6 @@ end
 
 
 """
-
     SRNN(;input=inputSize, hidden=hiddenSize, activation=:relu, options...)
     LSTM(;input=inputSize, hidden=hiddenSize, options...)
     GRU(;input=inputSize, hidden=hiddenSize, options...)
@@ -78,7 +77,6 @@ see RNNOutput
 """
 AbstractRNN
 
-
 for layer in (:SRNN, :LSTM, :GRU)
     @eval begin
         mutable struct $layer <: AbstractRNN
@@ -87,17 +85,16 @@ for layer in (:SRNN, :LSTM, :GRU)
             specs::RNN
             gatesview::Dict
         end
+        (m::$layer)(x,h...;o...) = RNNOutput(_forw(m,x,h...;o...)...)
     end
+
 end
 
+const lstmmaps = Dict(:i=>(1,5),:f=>(2,6),:n=>(3,7),:o=>(4,8))
+const ihmaps   = Dict(:i=>1,:h=>2)
+const wbmaps   = Dict(:w=>1,:b=>2)
+const grumaps  = Dict(:r=>(1,4),:u=>(2,5),:n=>(3,6))
 
-
-# mutable struct SRNN <: AbstractRNN
-#     embedding::Union{Nothing,Embed}
-#     params
-#     specs::RNN
-#     gatesview::Dict
-# end
 function SRNN(;input::Int, hidden::Int, embed=nothing, activation=:relu, usegpu=(arrtype <: KnetArray), dataType=eltype(arrtype), o...)
     embedding,inputSize = _getEmbed(input,embed)
     r,w = rnninit(inputSize,hidden;rnnType=activation, usegpu=usegpu, dataType=dataType, o...)
@@ -108,18 +105,7 @@ function SRNN(;input::Int, hidden::Int, embed=nothing, activation=:relu, usegpu=
     end
     SRNN(embedding,p,r,gatesview)
 end
-(m::SRNN)(x,h...;o...) = RNNOutput(_forw(m,x,h...;o...)...)
 
-const lstmmaps = Dict(:i=>(1,5),:f=>(2,6),:n=>(3,7),:o=>(4,8))
-const ihmaps   = Dict(:i=>1,:h=>2)
-const wbmaps   = Dict(:w=>1,:b=>2)
-
-# mutable struct LSTM <: AbstractRNN
-#     embedding::Union{Nothing,Embed}
-#     params
-#     specs::RNN
-#     gatesview::Dict
-# end
 
 function LSTM(;input::Int, hidden::Int, embed=nothing, usegpu=(arrtype <: KnetArray), dataType=eltype(arrtype), o...)
     embedding,inputSize = _getEmbed(input,embed)
@@ -133,13 +119,6 @@ function LSTM(;input::Int, hidden::Int, embed=nothing, usegpu=(arrtype <: KnetAr
 end
 (m::LSTM)(x,h...;o...) = RNNOutput(_forw(m,x,h...;o...)...)
 
-const grumaps  = Dict(:r=>(1,4),:u=>(2,5),:n=>(3,6))
-# mutable struct GRU <: AbstractRNN
-#     embedding::Union{Nothing,Embed}
-#     params
-#     specs::RNN
-#     gatesview::Dict
-# end
 
 function GRU(;input::Int, hidden::Int, embed=nothing, usegpu=(arrtype <: KnetArray), dataType=eltype(arrtype), o...)
     embedding,inputSize = _getEmbed(input,embed)
