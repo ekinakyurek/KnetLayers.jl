@@ -163,7 +163,7 @@ DeConv(;height::Integer, width::Integer, o...) = Filtering{typeof(deconv4)}(;hei
 ###
 function make4D(x)
     n = ndims(x)
-    if n  == 4;
+    if n == 4;
     elseif n == 3; x = reshape(x,size(x)...,1)
     elseif n == 2; x = reshape(x,size(x)...,1,1)
     elseif n == 1; x = reshape(x,size(x)...,1,1,1)
