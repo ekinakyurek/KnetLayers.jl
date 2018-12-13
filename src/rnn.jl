@@ -87,7 +87,6 @@ for layer in (:SRNN, :LSTM, :GRU)
         end
         (m::$layer)(x,h...;o...) = RNNOutput(_forw(m,x,h...;o...)...)
     end
-
 end
 
 const lstmmaps = Dict(:i=>(1,5),:f=>(2,6),:n=>(3,7),:o=>(4,8))
@@ -106,7 +105,6 @@ function SRNN(;input::Int, hidden::Int, embed=nothing, activation=:relu, usegpu=
     SRNN(embedding,p,r,gatesview)
 end
 
-
 function LSTM(;input::Int, hidden::Int, embed=nothing, usegpu=(arrtype <: KnetArray), dataType=eltype(arrtype), o...)
     embedding,inputSize = _getEmbed(input,embed)
     r,w = rnninit(inputSize,hidden; rnnType=:lstm, usegpu=usegpu, dataType=dataType, o...)
@@ -117,8 +115,6 @@ function LSTM(;input::Int, hidden::Int, embed=nothing, usegpu=(arrtype <: KnetAr
     end
     LSTM(embedding,p,r,gatesview)
 end
-(m::LSTM)(x,h...;o...) = RNNOutput(_forw(m,x,h...;o...)...)
-
 
 function GRU(;input::Int, hidden::Int, embed=nothing, usegpu=(arrtype <: KnetArray), dataType=eltype(arrtype), o...)
     embedding,inputSize = _getEmbed(input,embed)
@@ -130,8 +126,6 @@ function GRU(;input::Int, hidden::Int, embed=nothing, usegpu=(arrtype <: KnetArr
     end
     GRU(embedding,p,r,gatesview)
 end
-(m::GRU)(x,h...;o...) = RNNOutput(_forw(m,x,h...;o...)...)
-
 """
 
     PadSequenceArray(batch::Vector{Vector{T}}) where T<:Integer
