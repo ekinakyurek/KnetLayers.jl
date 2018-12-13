@@ -1,3 +1,6 @@
+####
+#### Output Structure
+####
 """
     struct RNNOutput
         y
@@ -26,7 +29,9 @@ struct RNNOutput{T,V}
     indices::Union{Vector{Vector{Int}},Nothing}
 end
 
-
+####
+#### RNN Types
+####
 """
     SRNN(;input=inputSize, hidden=hiddenSize, activation=:relu, options...)
     LSTM(;input=inputSize, hidden=hiddenSize, options...)
@@ -85,47 +90,37 @@ for layer in (:SRNN, :LSTM, :GRU)
             specs::RNN
             gatesview::Dict
         end
+
         (m::$layer)(x,h...;o...) = RNNOutput(_forw(m,x,h...;o...)...)
+
+        function $layer(;input::Integer, hidden::Integer, embed=nothing, activation=:relu,
+                         usegpu=(arrtype <: KnetArray), dataType=eltype(arrtype), o...)
+
+            embedding,inputSize = _getEmbed(input,embed)
+            rnnType = $layer==SRNN ? activation : Symbol(lowercase(string($layer)))
+            r,w = rnninit(inputSize,hidden; rnnType=rnnType, usegpu=usegpu, dataType=dataType, o...)
+            gatesview  = Dict{Symbol,Any}()
+            p = param(w)
+            for l in 1:r.numLayers, d in 0:r.direction
+                for (g,id) in gate_mappings($layer)
+                    for (ih,ihid) in input_mappings, (ty,param) in param_mappings
+                         gatesview[Symbol(ty,ih,g,l,d)] = rnnparam(r,p.value, (r.direction+1)*(l-1)+d+1, id[ihid], param; useview=true)
+                    end
+                end
+            end
+            $layer(embedding,p,r,gatesview)
+        end
     end
 end
+gate_mappings(::Type{SRNN}) = Dict(:h=>(1,2))
+gate_mappings(::Type{GRU})  = Dict(:r=>(1,4),:u=>(2,5),:n=>(3,6))
+gate_mappings(::Type{LSTM}) = Dict(:i=>(1,5),:f=>(2,6),:n=>(3,7),:o=>(4,8))
+const input_mappings = Dict(:i=>1,:h=>2)
+const param_mappings = Dict(:w=>1,:b=>2)
 
-const lstmmaps = Dict(:i=>(1,5),:f=>(2,6),:n=>(3,7),:o=>(4,8))
-const ihmaps   = Dict(:i=>1,:h=>2)
-const wbmaps   = Dict(:w=>1,:b=>2)
-const grumaps  = Dict(:r=>(1,4),:u=>(2,5),:n=>(3,6))
-
-function SRNN(;input::Int, hidden::Int, embed=nothing, activation=:relu, usegpu=(arrtype <: KnetArray), dataType=eltype(arrtype), o...)
-    embedding,inputSize = _getEmbed(input,embed)
-    r,w = rnninit(inputSize,hidden;rnnType=activation, usegpu=usegpu, dataType=dataType, o...)
-    p = param(w)
-    gatesview  = Dict{Symbol,Any}()
-    for l in 1:r.numLayers, d in 0:r.direction, (ih,ihid) in ihmaps, (ty,param) in wbmaps
-        gatesview[Symbol(ty,ih,l,d)] = rnnparam(r,p.value,(r.direction+1)*(l-1)+d+1,ihid,param;useview=true)
-    end
-    SRNN(embedding,p,r,gatesview)
-end
-
-function LSTM(;input::Int, hidden::Int, embed=nothing, usegpu=(arrtype <: KnetArray), dataType=eltype(arrtype), o...)
-    embedding,inputSize = _getEmbed(input,embed)
-    r,w = rnninit(inputSize,hidden; rnnType=:lstm, usegpu=usegpu, dataType=dataType, o...)
-    gatesview  = Dict{Symbol,Any}()
-    p = param(w)
-    for l in 1:r.numLayers, d in 0:r.direction, (g,id) in lstmmaps, (ih,ihid) in ihmaps, (ty,param) in wbmaps
-        gatesview[Symbol(ty,ih,g,l,d)] = rnnparam(r,p.value,(r.direction+1)*(l-1)+d+1,id[ihid],param;useview=true)
-    end
-    LSTM(embedding,p,r,gatesview)
-end
-
-function GRU(;input::Int, hidden::Int, embed=nothing, usegpu=(arrtype <: KnetArray), dataType=eltype(arrtype), o...)
-    embedding,inputSize = _getEmbed(input,embed)
-    r,w = rnninit(inputSize,hidden; rnnType=:gru, usegpu=usegpu, dataType=dataType, o...)
-    gatesview  = Dict{Symbol,Any}()
-    p = param(w)
-    for l in 1:r.numLayers, d in 0:r.direction, (g,id) in grumaps, (ih,ihid) in ihmaps,(ty,param) in wbmaps
-        gatesview[Symbol(ty,ih,g,l,d)] = rnnparam(r,p.value,(r.direction+1)*(l-1)+d+1,id[ihid],param;useview=true)
-    end
-    GRU(embedding,p,r,gatesview)
-end
+####
+#### Utils
+####
 """
 
     PadSequenceArray(batch::Vector{Vector{T}}) where T<:Integer
