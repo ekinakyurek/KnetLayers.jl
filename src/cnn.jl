@@ -129,10 +129,10 @@ Conv(;height::Int, width::Int, o...) = Filtering{typeof(conv4)}(;height=height, 
 """
     DeConv(;height=filterHeight, width=filterWidth, io=1=>1, kwargs...)
 
-Creates and deconvolutional layer according to given filter dimensions.
+Creates and deconvolutional layer `Filtering{typeof(deconv4)}`  according to given filter dimensions.
 
 
-    (m::Filtering)(x) #forward run
+    (m::Filtering{typeof(deconv4)})(x) #forward run
 
 If `m.w` has dimensions `(W1,W2,...,I,O)` and
 `x` has dimensions `(X1,X2,...,I,N)`, the result `y` will have
@@ -151,7 +151,7 @@ or an tuple with entries for each spatial dimension.
 * `unpool=nothing`: Unpooling layer or window size of unpooling
 * `winit=xavier`: weight initialization distribution
 * `bias=zeros`: bias initialization distribution
-* `padding=0`: the nßumber of extra zeros implicitly concatenated at the start and at the end of each dimension.
+* `padding=0`: the number of extra zeros implicitly concatenated at the start and at the end of each dimension.
 * `stride=1`: the number of elements to slide to reach the next filtering window.
 * `upscale=1`: upscale factor for each dimension.
 * `mode=0`: 0 for convolution and 1 for cross-correlation.
