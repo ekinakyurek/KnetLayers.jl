@@ -1,7 +1,6 @@
 ####
 #### Sampling
 ####
-
 mutable struct Sampling{T} <: Layer
     options::NamedTuple
 end
@@ -60,7 +59,6 @@ Pool(;o...) = Sampling{typeof(pool)}(;o...)
     x == pool(unpool(x;o...); o...)
 """
 UnPool(;o...) = Sampling{typeof(unpool)}(;o...)
-
 ####
 #### Filtering
 ####
@@ -71,15 +69,15 @@ mutable struct Filtering{T} <: Layer
     options::NamedTuple
 end
 
-function Filtering{T}(;height::Integer, width::Integer, io=1=>1,
+function Filtering{T}(;height::Integer, width::Integer, inout=1=>1,
                               winit=xavier, binit=zeros, atype=arrtype,
                               activation=ReLU(), opts...) where T
     if T===typeof(conv4)
-        w = param(height,width,io[1],io[2]; init=winit, atype=atype)
+        w = param(height,width,inout[1],inout[2]; init=winit, atype=atype)
     else
-        w = param(height,width,io[2],io[1]; init=winit, atype=atype)
+        w = param(height,width,inout[2],inout[1]; init=winit, atype=atype)
     end
-    b = binit !== nothing ? param(1,1,io[2],1; init=binit, atype=atype) : nothing
+    b = binit !== nothing ? param(1,1,inout[2],1; init=binit, atype=atype) : nothing
     Filtering{T}(w, b, activation; opts...)
 end
 
@@ -93,7 +91,7 @@ Filtering{T}(w, b, activation; stride=1, padding=0, mode=0, upscale=1, alpha=1) 
      postConv(m, deconv4(m.weight, make4D(x); m.options...), ndims(x))
 
 """
-    Conv(;height=filterHeight, width=filterWidth, io = 1 => 1, kwargs...)
+    Conv(;height=filterHeight, width=filterWidth, inout = 1 => 1, kwargs...)
 
 Creates and convolutional layer `Filtering{typeof(conv4)}` according to given filter dimensions.
 
@@ -111,7 +109,7 @@ keyword arguments that can be specified as a single number (in which case they a
 or an tuple with entries for each spatial dimension.
 
 # Keywords
-* `io=input_channels => output_channels`
+* `inout=input_channels => output_channels`
 * `activation=identity`: nonlinear function applied after convolution
 * `pool=nothing`: Pooling layer or window size of pooling
 * `winit=xavier`: weight initialization distribution
@@ -127,7 +125,7 @@ or an tuple with entries for each spatial dimension.
 Conv(;height::Int, width::Int, o...) = Filtering{typeof(conv4)}(;height=height, width=width, o...)
 
 """
-    DeConv(;height=filterHeight, width=filterWidth, io=1=>1, kwargs...)
+    DeConv(;height=filterHeight, width=filterWidth, inout=1=>1, kwargs...)
 
 Creates and deconvolutional layer `Filtering{typeof(deconv4)}`  according to given filter dimensions.
 
@@ -146,7 +144,7 @@ keyword arguments that can be specified as a single number (in which case they a
 or an tuple with entries for each spatial dimension.
 
 # Keywords
-* `io=input_channels => output_channels`
+* `inout=input_channels => output_channels`
 * `activation=identity`: nonlinear function applied after convolution
 * `unpool=nothing`: Unpooling layer or window size of unpooling
 * `winit=xavier`: weight initialization distribution
@@ -163,7 +161,6 @@ DeConv(;height::Integer, width::Integer, o...) = Filtering{typeof(deconv4)}(;hei
 ###
 ### Utils
 ###
-
 function make4D(x)
     n = ndims(x)
     if n  == 4;

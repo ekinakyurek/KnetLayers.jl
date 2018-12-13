@@ -18,7 +18,7 @@ mlp = MLP(100,50,20; activation=Sigm()) # input size=100, hidden=50 and output=2
 prediction = mlp(randn(Float32,100,1))
 
 #Instantiate a convolutional layer with random parameters
-cnn = Conv(height=3, width=3, io=3=>10, padding=1, stride=1) # A conv layer
+cnn = Conv(height=3, width=3, inout=3=>10, padding=1, stride=1) # A conv layer
 
 #Filter your input with the convolutional layer
 output = cnn(randn(Float32,224,224,3,1))
