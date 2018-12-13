@@ -1,23 +1,20 @@
-mutable struct GenericPool <: Layer
-    window::Union{Int,Tuple{Vararg{Int}}}
-    padding::Union{Int,Tuple{Vararg{Int}}}
-    stride::Union{Int,Tuple{Vararg{Int}}}
-    mode::Int
-    maxpoolingNanOpt::Int
-    alpha::Int
-    unpool::Bool
+####
+#### Sampling
+####
+
+mutable struct Sampling{T} <: Layer
+    options::NamedTuple
 end
 
-GenericPool(;window=2,padding=0,stride=window,mode=0,maxpoolingNanOpt=0,alpha=1,unpool=false) = GenericPool(window,padding,stride,mode,maxpoolingNanOpt,alpha,unpool)
+Sampling{T}(;window=2, padding=0, stride=window, mode=0, maxpoolingNanOpt=0, alpha=1) where T =
+    Sampling{T}((window=window, padding=padding, stride=stride, mode=mode, maxpoolingNanOpt=maxpoolingNanOpt, alpha=alpha))
 
-function (m::GenericPool)(x)
-     forw = m.unpool ? pool : unpool
-     forw(x;window=m.window,padding=m.padding,stride=m.stride,mode=m.mode,maxpoolingNanOpt=m.maxpoolingNanOpt,alpha=m.alpha)
-end
+(m::Sampling{typeof(pool)})(x)   =  pool(x;m.options...)
+(m::Sampling{typeof(unpool)})(x) =  unpool(x;m.options...)
 
 """
     Pool(kwargs...)
-    (::GenericPool)(x)
+    (::Sampling{typeof(pool)})(x)
 
 Compute pooling of input values (i.e., the maximum or average of several adjacent
 values) to produce an output with smaller height and/or width.
@@ -52,67 +49,55 @@ propagated if 1.
 * alpha=1: can be used to scale the result.
 
 """
-Pool(;o...)   = GenericPool(;o...)
+Pool(;o...) = Sampling{typeof(pool)}(;o...)
 
 """
     UnPool(kwargs...)
-    (::GenericPool)(x)
+    (::Sampling{typeof(unpool)})(x)
 
     Reverse of pooling. It has same kwargs with Pool
 
     x == pool(unpool(x;o...); o...)
 """
-UnPool(;o...) = GenericPool(;unpool=true,o...)
+UnPool(;o...) = Sampling{typeof(unpool)}(;o...)
 
-mutable struct GenericConv <: Layer
+####
+#### Filtering
+####
+mutable struct Filtering{T} <: Layer
     weight
     bias
     activation
-    padding::Union{Int,Tuple{Vararg{Int}}}
-    stride::Union{Int,Tuple{Vararg{Int}}}
-    pool::Union{GenericPool,Nothing}
-    upscale
-    mode::Int
-    alpha
+    options::NamedTuple
 end
-GenericConv(;height::Int, width=1, channels=1, filters=1, winit=xavier, binit=zeros, atype=arrtype, opts...)=GenericConv(param(height,width,channels,filters;init=winit,atype=atype),param(1,1,filters,1;init=binit,atype=atype);opts...)
 
-function GenericConv(weight,bias;activation=ReLU(),stride=1,padding=0,mode=0,upscale=1,alpha=1,pool=nothing,unpool=nothing,deconv=false)
-    if typeof(pool) <: Union{Int,Tuple{Vararg{Int}}}
-        genericpool = Pool(;window=pool)
-    elseif typeof(unpool) <: Union{Int,Tuple{Vararg{Int}}}
-        genericpool = UnPool(;window=pool)
+function Filtering{T}(;height::Integer, width::Integer, io=1=>1,
+                              winit=xavier, binit=zeros, atype=arrtype,
+                              activation=ReLU(), opts...) where T
+    if T===typeof(conv4)
+        w = param(height,width,io[1],io[2]; init=winit, atype=atype)
     else
-        genericpool = nothing
+        w = param(height,width,io[2],io[1]; init=winit, atype=atype)
     end
-    GenericConv(weight,bias,activation,padding,stride,genericpool,upscale,mode,alpha)
+    b = binit !== nothing ? param(1,1,io[2],1; init=binit, atype=atype) : nothing
+    Filtering{T}(w, b, activation; opts...)
 end
 
-function (m::GenericConv)(x)
-     n = ndims(x)
-     if n == 4 || n==5
-     elseif n == 3; x = reshape(x,size(x)...,1)
-     elseif n == 2; x = reshape(x,size(x)...,1,1)
-     elseif n == 1; x = reshape(x,size(x)...,1,1,1)
-     else; error("Conv supports 1,2,3,4,5 D arrays only")
-     end
-     y  = conv4(m.weight,x;stride=m.stride,padding=m.padding,mode=m.mode,upscale=m.upscale,alpha=m.alpha) .+ m.bias
-     if m.activation!==nothing
-         ya = m.activation(y)
-     else
-         ya = y
-     end
-     yp = m.pool == nothing ? ya : m.pool(ya);
+Filtering{T}(w, b, activation; stride=1, padding=0, mode=0, upscale=1, alpha=1) where T =
+    Filtering{T}(w, b, activation, (stride=stride, upscale=upscale, mode=mode, alpha=alpha, padding=padding))
 
-     n > 3 ? yp : reshape(yp,size(yp)[1:n])
-end
+(m::Filtering{typeof(conv4)})(x) =
+     postConv(m, conv4(m.weight, make4D(x); m.options...), ndims(x))
+
+(m::Filtering{typeof(deconv4)})(x) =
+     postConv(m, deconv4(m.weight, make4D(x); m.options...), ndims(x))
 
 """
-    Conv(height=filterHeight, width=filterWidth, channels=1, filter=1, kwargs...)
+    Conv(;height=filterHeight, width=filterWidth, io = 1 => 1, kwargs...)
 
-Creates and convolutional layer according to given filter dimensions.
+Creates and convolutional layer `Filtering{typeof(conv4)}` according to given filter dimensions.
 
-    (m::GenericConv)(x) #forward run
+    (m::Filtering{typeof(conv4)})(x) #forward run
 
 If `m.w` has dimensions `(W1,W2,...,I,O)` and
 `x` has dimensions `(X1,X2,...,I,N)`, the result `y` will have
@@ -126,6 +111,7 @@ keyword arguments that can be specified as a single number (in which case they a
 or an tuple with entries for each spatial dimension.
 
 # Keywords
+* `io=input_channels => output_channels`
 * `activation=identity`: nonlinear function applied after convolution
 * `pool=nothing`: Pooling layer or window size of pooling
 * `winit=xavier`: weight initialization distribution
@@ -138,15 +124,15 @@ or an tuple with entries for each spatial dimension.
 * `handle`: handle to a previously created cuDNN context. Defaults to a Knet allocated handle.
 
 """
-Conv(;height::Int, width::Int, o...)   = GenericConv(;height=height, width=width, o...)
-
+Conv(;height::Int, width::Int, o...) = Filtering{typeof(conv4)}(;height=height, width=width, o...)
 
 """
-    DeConv(height::Int, width=1, channels=1, filter=1, kwargs...)
+    DeConv(;height=filterHeight, width=filterWidth, io=1=>1, kwargs...)
 
-Creates and deconvolutional layer according to given filter dimensions.
+Creates and deconvolutional layer `Filtering{typeof(deconv4)}`  according to given filter dimensions.
 
-    (m::GenericConv)(x) #forward run
+
+    (m::Filtering{typeof(deconv4)})(x) #forward run
 
 If `m.w` has dimensions `(W1,W2,...,I,O)` and
 `x` has dimensions `(X1,X2,...,I,N)`, the result `y` will have
@@ -160,15 +146,40 @@ keyword arguments that can be specified as a single number (in which case they a
 or an tuple with entries for each spatial dimension.
 
 # Keywords
+* `io=input_channels => output_channels`
 * `activation=identity`: nonlinear function applied after convolution
 * `unpool=nothing`: Unpooling layer or window size of unpooling
 * `winit=xavier`: weight initialization distribution
 * `bias=zeros`: bias initialization distribution
-* `padding=0`: the nßumber of extra zeros implicitly concatenated at the start and at the end of each dimension.
+* `padding=0`: the number of extra zeros implicitly concatenated at the start and at the end of each dimension.
 * `stride=1`: the number of elements to slide to reach the next filtering window.
 * `upscale=1`: upscale factor for each dimension.
 * `mode=0`: 0 for convolution and 1 for cross-correlation.
 * `alpha=1`: can be used to scale the result.
 * `handle`: handle to a previously created cuDNN context. Defaults to a Knet allocated handle.
 """
-DeConv(;height::Int, width::Int, o...) = GenericConv(height=height, width=width, deconv=true,o...)
+DeConv(;height::Integer, width::Integer, o...) = Filtering{typeof(deconv4)}(;height=height, width=width, o...)
+
+###
+### Utils
+###
+
+function make4D(x)
+    n = ndims(x)
+    if n  == 4;
+    elseif n == 3; x = reshape(x,size(x)...,1)
+    elseif n == 2; x = reshape(x,size(x)...,1,1)
+    elseif n == 1; x = reshape(x,size(x)...,1,1,1)
+    else; error("Convolutional operations supports 1,2,3,4,5 D arrays only"); end
+    return x
+end
+
+function postConv(m::Filtering, y, n)
+    if m.bias !== nothing
+        y = y .+ m.bias
+    end
+    if m.activation !== nothing
+        y = m.activation(y)
+    end
+    return n>3 ? y : reshape(y,size(y)[1:n])
+end
