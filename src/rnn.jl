@@ -95,20 +95,18 @@ for layer in (:SRNN, :LSTM, :GRU)
 
         function $layer(;input::Integer, hidden::Integer, embed=nothing, activation=:relu,
                          usegpu=(arrtype <: KnetArray), dataType=eltype(arrtype), o...)
-
             embedding,inputSize = _getEmbed(input,embed)
             rnnType = $layer==SRNN ? activation : Symbol(lowercase(string($layer)))
             r,w = rnninit(inputSize,hidden; rnnType=rnnType, usegpu=usegpu, dataType=dataType, o...)
             gatesview  = Dict{Symbol,Any}()
-            p = param(w)
             for l in 1:r.numLayers, d in 0:r.direction
                 for (g,id) in gate_mappings($layer)
                     for (ih,ihid) in input_mappings, (ty,param) in param_mappings
-                         gatesview[Symbol(ty,ih,g,l,d)] = rnnparam(r,p.value, (r.direction+1)*(l-1)+d+1, id[ihid], param; useview=true)
+                         gatesview[Symbol(ty,ih,g,l,d)] = rnnparam(r, w, (r.direction+1)*(l-1)+d+1, id[ihid], param; useview=true)
                     end
                 end
             end
-            $layer(embedding,p,r,gatesview)
+            $layer(embedding,param(w),r,gatesview)
         end
     end
 end
@@ -208,9 +206,9 @@ function _batchSizes2indices(batchSizes)
     return inds
 end
 
-_getEmbed(input::Int,embed::Nothing)   = (nothing,input)
-_getEmbed(input::Int,embed::Embed)     = size(embed.w,2) == input ? (embed,input) : error("dimension mismatch in your embedding")
-_getEmbed(input::Int,embed::Integer)   = (Embed(input=input,output=embed),embed)
+_getEmbed(input::Int,embed::Nothing) = (nothing,input)
+_getEmbed(input::Int,embed::Embed)   = size(embed.w,2) == input ? (embed,input) : error("dimension mismatch in your embedding")
+_getEmbed(input::Int,embed::Integer) = (Embed(input=input,output=embed),embed)
 
 function _forw(rnn::AbstractRNN,seq::Array{T},h...;batchSizes=nothing,o...) where T<:Integer
     rnn.embedding === nothing && error("rnn has no embedding!")

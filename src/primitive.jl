@@ -32,7 +32,6 @@ function (m::Multiply)(x; keepsize=true)
     end
 end
 
-
 """
     Embed(input=inputSize, output=embedSize, winit=xavier, atype=KnetLayers.arrtype)
 Creates an embedding layer according to given `inputSize` and `embedSize` where `inputSize` is your number of unique items you want to embed, and `embedSize` is the size of output vectors.
@@ -85,7 +84,6 @@ end
 
 (m::Linear)(x) = m.mult(x) .+ m.bias
 
-
 """
     Dense(input=inputSize, output=outputSize, activation=ReLU(), winit=xavier, binit=zeros, atype=KnetLayers.arrtype)
 
@@ -110,7 +108,6 @@ function Dense(;input::Int, output::Int, activation=ReLU(), winit=xavier, binit=
 end
 
 (m::Dense)(x) = m.activation===nothing ? m.linear(x) : m.activation(m.linear(x))
-
 
 """
     BatchNorm(channels:Int;options...)

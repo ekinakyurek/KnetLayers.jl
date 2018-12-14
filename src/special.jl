@@ -24,10 +24,12 @@ mutable struct MLP <: Layer
      layers::Tuple{Vararg{Linear}}
      activation
 end
+
 function MLP(h::Int...; winit=xavier, binit=zeros, activation=ReLU(), atype=arrtype)
     singlelayer(input,ouput) = Linear(input=input, output=ouput, winit=winit, binit=binit, atype=atype)
     MLP(singlelayer.(h[1:end-1], h[2:end]),activation)
 end
+
 function (m::MLP)(x;prob=0)
     for layer in m.layers
         x = layer(dropout(x,prob))

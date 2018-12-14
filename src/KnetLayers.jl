@@ -6,7 +6,7 @@ export gpu,knetgc,KnetArray,relu,sigm,elu,invx,mat,
        Data,minibatch,train!,Train,param,param0,params,
        logp, logsumexp, nll, bce, logistic, accuracy,zeroone,dropout,
        SGD, Sgd, Momentum, Nesterov, Adam, Adagrad, Adadelta, Rmsprop, update!, optimizers,
-       gaussian, xavier, bilinear, setseed,
+       gaussian, xavier, bilinear, setseed, train!
        hyperband, goldensection, cpucopy, gpucopy,
        value, grad, cat1d, Param, @diff, @zerograd
 
@@ -38,6 +38,7 @@ include("loss.jl");        export CrossEntropyLoss, BCELoss, LogisticLoss
 include("cnn.jl");         export Pool,UnPool,DeConv,Conv
 include("special.jl");     export MLP
 include("rnn.jl");         export RNN,SRNN,LSTM,GRU,RNNOutput,PadRNNOutput,PadSequenceArray
+include("chain.jl");       export Chain
 
 
 end # module

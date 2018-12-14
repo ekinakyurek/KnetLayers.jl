@@ -4,8 +4,7 @@
 
 Rectified Linear Unit function.
 """
-struct ReLU <: Activation
-end
+struct ReLU <: Activation end
 (l::ReLU)(x) = relu.(x)
 
 """
@@ -14,8 +13,7 @@ end
 
 Sigmoid function
 """
-struct Sigm <: Activation
-end
+struct Sigm <: Activation end
 (l::Sigm)(x) = sigm.(x)
 
 """
@@ -24,8 +22,7 @@ end
 
 Tangent hyperbolic function
 """
-struct Tanh <: Activation
-end
+struct Tanh <: Activation end
 (l::Tanh)(x) = tanh.(x)
 
 
@@ -35,8 +32,7 @@ end
 
 Exponential Linear Unit nonlineariy.
 """
-struct ELU <: Activation
-end
+struct ELU <: Activation end
 (l::ELU)(x) = elu.(x)
 
 """

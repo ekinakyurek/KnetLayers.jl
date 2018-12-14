@@ -163,12 +163,8 @@ DeConv(;height::Integer, width::Integer, o...) = Filtering{typeof(deconv4)}(;hei
 ###
 function make4D(x)
     n = ndims(x)
-    if n == 4;
-    elseif n == 3; x = reshape(x,size(x)...,1)
-    elseif n == 2; x = reshape(x,size(x)...,1,1)
-    elseif n == 1; x = reshape(x,size(x)...,1,1,1)
-    else; error("Convolutional operations supports 1,2,3,4,5 D arrays only"); end
-    return x
+    @assert n < 5 "Filtering layers currently supports until 4 dimensional arrays"
+    n == 4 ? x : reshape(x,size(x)...,ntuple(x->1, 4-n)...)
 end
 
 function postConv(m::Filtering, y, n)
