@@ -6,7 +6,7 @@ export gpu,knetgc,KnetArray,relu,sigm,elu,invx,mat,
        Data,minibatch,train!,Train,param,param0,params,
        logp, logsumexp, nll, bce, logistic, accuracy,zeroone,dropout,
        SGD, Sgd, Momentum, Nesterov, Adam, Adagrad, Adadelta, Rmsprop, update!, optimizers,
-       gaussian, xavier, bilinear, setseed, train!
+       gaussian, xavier, bilinear, setseed, train!,
        hyperband, goldensection, cpucopy, gpucopy,
        value, grad, cat1d, Param, @diff, @zerograd
 
