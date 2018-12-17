@@ -109,6 +109,8 @@ end
 
 (m::Dense)(x) = m.activation===nothing ? m.linear(x) : m.activation(m.linear(x))
 
+#TO-DO: Remove after the issue is resolved:
+#https://github.com/denizyuret/Knet.jl/issues/418
 """
     BatchNorm(channels:Int;options...)
     (m::BatchNorm)(x;training=false) #forward run
@@ -121,8 +123,8 @@ end
 * `meaninit=zeros`: The function used for initialize the running mean. Should either be `nothing` or
 of the form `(eltype, dims...)->data`. `zeros` is a good option.
 * `varinit=ones`: The function used for initialize the run
-* `elementtype=eltype(KnetLayers.arrtype)` : element type ∈ {Float32,Float64} for parameters. Default value is `eltype(KnetLayers.arrtype)`
-
+* `dataType=eltype(KnetLayers.arrtype)` : element type ∈ {Float32,Float64} for parameters. Default value is `eltype(KnetLayers.arrtype)`
+* `usegpu=KnetLayers.arrtype <: KnetArray` :
 # Keywords
 * `training`=nothing: When training is true, the mean and variance of x are used and moments
  argument is modified if it is provided. When training is false, mean and variance
@@ -134,5 +136,9 @@ mutable struct BatchNorm <: Layer
     moments::Knet.BNMoments
 end
 
-BatchNorm(channels::Int;elementtype=eltype(arrtype),o...) =BatchNorm(bnparams(elementtype,channels),bnmoments(;o...))
+function BatchNorm(channels::Int; usegpu = arrtype <: KnetArray, dataType=eltype(arrtype), o...)
+    w = bnparams(dataType,channels)
+    m = bnmoments(;o...)
+    BatchNorm(usegpu ? Param(KnetArray(w)) : Param(w),m)
+end
 (m::BatchNorm)(x;o...) = batchnorm(x,m.moments,m.params;o...)

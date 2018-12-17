@@ -69,14 +69,11 @@ mutable struct Filtering{T} <: Layer
     options::NamedTuple
 end
 
-function Filtering{T}(;height::Integer, width::Integer, inout=1=>1,
-                              winit=xavier, binit=zeros, atype=arrtype,
-                              activation=ReLU(), opts...) where T
-    if T===typeof(conv4)
-        w = param(height,width,inout[1],inout[2]; init=winit, atype=atype)
-    else
-        w = param(height,width,inout[2],inout[1]; init=winit, atype=atype)
-    end
+function Filtering{T}(;height::Integer, width::Integer, inout::Pair=1=>1,
+                         winit=xavier, binit=zeros, atype=arrtype,
+                         activation=ReLU(), opts...) where T
+    wsize = T===typeof(conv4) ? inout : reverse(inout)
+    w = param(height,width,wsize...; init=winit, atype=atype)
     b = binit !== nothing ? param(1,1,inout[2],1; init=binit, atype=atype) : nothing
     Filtering{T}(w, b, activation; opts...)
 end
@@ -163,16 +160,16 @@ DeConv(;height::Integer, width::Integer, o...) = Filtering{typeof(deconv4)}(;hei
 ###
 function make4D(x)
     n = ndims(x)
-    @assert n < 5 "Filtering layers currently supports until 4 dimensional arrays"
+    @assert n < 5 "filtering layers currently supports 4 dimensional arrays"
     n == 4 ? x : reshape(x,size(x)...,ntuple(x->1, 4-n)...)
 end
 
-function postConv(m::Filtering, y, n)
+function postConv(m::Filtering, y, dims)
     if m.bias !== nothing
         y = y .+ m.bias
     end
     if m.activation !== nothing
         y = m.activation(y)
     end
-    return n>3 ? y : reshape(y,size(y)[1:n])
+    return dims>3 ? y : reshape(y,size(y)[1:dims])
 end
