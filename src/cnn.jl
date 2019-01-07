@@ -1,11 +1,11 @@
 ####
 #### Sampling
 ####
-mutable struct Sampling{T} <: Layer
+mutable struct Sampling{T<:Function} <: Layer
     options::NamedTuple
 end
 
-Sampling{T}(;window=2, padding=0, stride=window, mode=0, maxpoolingNanOpt=0, alpha=1) where T =
+Sampling{T}(;window=2, padding=0, stride=window, mode=0, maxpoolingNanOpt=0, alpha=1) where T <: Function =
     Sampling{T}((window=window, padding=padding, stride=stride, mode=mode, maxpoolingNanOpt=maxpoolingNanOpt, alpha=alpha))
 
 (m::Sampling{typeof(pool)})(x)   =  pool(x;m.options...)
@@ -62,7 +62,7 @@ UnPool(;o...) = Sampling{typeof(unpool)}(;o...)
 ####
 #### Filtering
 ####
-mutable struct Filtering{T} <: Layer
+mutable struct Filtering{T<:Function} <: Layer
     weight
     bias
     activation
@@ -71,14 +71,14 @@ end
 
 function Filtering{T}(;height::Integer, width::Integer, inout::Pair=1=>1,
                          winit=xavier, binit=zeros, atype=arrtype,
-                         activation=ReLU(), opts...) where T
+                         activation=ReLU(), opts...) where T <: Function
     wsize = T===typeof(conv4) ? inout : reverse(inout)
     w = param(height,width,wsize...; init=winit, atype=atype)
     b = binit !== nothing ? param(1,1,inout[2],1; init=binit, atype=atype) : nothing
     Filtering{T}(w, b, activation; opts...)
 end
 
-Filtering{T}(w, b, activation; stride=1, padding=0, mode=0, upscale=1, alpha=1) where T =
+Filtering{T}(w, b, activation; stride=1, padding=0, mode=0, upscale=1, alpha=1) where T <: Function =
     Filtering{T}(w, b, activation, (stride=stride, upscale=upscale, mode=mode, alpha=alpha, padding=padding))
 
 (m::Filtering{typeof(conv4)})(x) =
