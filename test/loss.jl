@@ -16,10 +16,10 @@ include("header.jl")
     #l2(x,indices)
     #@test true
 
-    x = arrtype(randn(10))
-    indices = rand([-1,1],10)
-    l3 = LogisticLoss()
-    l3(x,indices)
-    @test true
+    #x = arrtype(randn(10))
+    #indices = rand([-1,1],10)
+    #l3 = LogisticLoss()
+    #l3(x,indices)
+    #@test true
 
 end

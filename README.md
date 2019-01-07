@@ -63,9 +63,11 @@ rnnoutput = lstm([[1,2,3,4],[5,6]];sorted=true,hy=true,cy=true)
 lstm.gatesview
 ```
 
-## Example Model
+## Example Models
 
-An example of sequence to sequence models which learns sorting integer numbers.
+1) [ResNet](./examples/resnet.jl)
+
+2) An example of sequence to sequence models which learns sorting integer numbers.
 ```JULIA
 using KnetLayers
 
@@ -108,7 +110,6 @@ julia> sort([3 2 1 4 5 9 3 5 6 6 1 2 5;];dims=2)
  1  1  2  2  3  3  4  5  5  5  6  6  9
 "
 ```
-
 ## Exported Layers
 ```
 Core:
