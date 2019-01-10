@@ -22,10 +22,10 @@ See `indices` and `PadRNNOutput` to get correct time outputs for a specific inst
 
 `indices` is corresponding instace indices for your `RNNOutput.y`. You may call `yi = y[:,indices[i]]`.
 """
-struct RNNOutput{T,V}
+struct RNNOutput{T,V,Z}
     y::T
     hidden::V
-    memory::V
+    memory::Z
     indices::Union{Vector{Vector{Int}},Nothing}
 end
 
