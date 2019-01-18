@@ -83,6 +83,7 @@ see RNNOutput
 AbstractRNN
 
 for layer in (:SRNN, :LSTM, :GRU)
+    layername=string(layer)
     @eval begin
         mutable struct $layer <: AbstractRNN
             embedding::Union{Nothing,Embed}
@@ -96,7 +97,7 @@ for layer in (:SRNN, :LSTM, :GRU)
         function $layer(;input::Integer, hidden::Integer, embed=nothing, activation=:relu,
                          usegpu=(arrtype <: KnetArray), dataType=eltype(arrtype), o...)
             embedding,inputSize = _getEmbed(input,embed)
-            rnnType = $layer==SRNN ? activation : Symbol(lowercase(string($layer)))
+            rnnType = $layer==SRNN ? activation : Symbol(lowercase($layername))
             r,w = rnninit(inputSize,hidden; rnnType=rnnType, usegpu=usegpu, dataType=dataType, o...)
             gatesview  = Dict{Symbol,Any}()
             for l in 1:r.numLayers, d in 0:r.direction
