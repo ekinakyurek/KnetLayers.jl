@@ -88,7 +88,7 @@ for layer in (:SRNN, :LSTM, :GRU)
         mutable struct $layer <: AbstractRNN
             embedding::Union{Nothing,Embed}
             params
-            specs::RNN
+            specs::Knet.RNN
             gatesview::Dict
         end
 
@@ -103,11 +103,11 @@ for layer in (:SRNN, :LSTM, :GRU)
             for l in 1:r.numLayers, d in 0:r.direction
                 for (g,id) in gate_mappings($layer)
                     for (ih,ihid) in input_mappings, (ty,param) in param_mappings
-                         gatesview[Symbol(ty,ih,g,l,d)] = rnnparam(r, w, (r.direction+1)*(l-1)+d+1, id[ihid], param; useview=true)
+                         gatesview[Symbol(ty,ih,g,l,d)] = rnnparam(r, value(w), (r.direction+1)*(l-1)+d+1, id[ihid], param; useview=true)
                     end
                 end
             end
-            $layer(embedding,param(w),r,gatesview)
+            $layer(embedding,w,r,gatesview)
         end
     end
 end

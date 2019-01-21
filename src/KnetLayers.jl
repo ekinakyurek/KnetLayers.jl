@@ -1,7 +1,7 @@
 module KnetLayers
 
 using Knet
-import Knet: save, load
+import Knet: save, load, rnnforw, rnninit
 export gpu, knetgc, KnetArray, relu, sigm, elu, invx, mat, bmm,
        Data, minibatch,
        param, param0, params,
