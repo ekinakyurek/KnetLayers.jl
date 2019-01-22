@@ -98,16 +98,16 @@ for layer in (:SRNN, :LSTM, :GRU)
                          usegpu=(arrtype <: KnetArray), dataType=eltype(arrtype), o...)
             embedding,inputSize = _getEmbed(input,embed)
             rnnType = $layer==SRNN ? activation : Symbol(lowercase($layername))
-            r,w = rnninit(inputSize,hidden; rnnType=rnnType, usegpu=usegpu, dataType=dataType, o...)
+            r = Knet.RNN(inputSize, hidden; rnnType=rnnType, usegpu=usegpu, dataType=dataType, o...)
             gatesview  = Dict{Symbol,Any}()
             for l in 1:r.numLayers, d in 0:r.direction
                 for (g,id) in gate_mappings($layer)
                     for (ih,ihid) in input_mappings, (ty,param) in param_mappings
-                         gatesview[Symbol(ty,ih,g,l,d)] = rnnparam(r, value(w), (r.direction+1)*(l-1)+d+1, id[ihid], param; useview=true)
+                         gatesview[Symbol(ty,ih,g,l,d)] = rnnparam(r, (r.direction+1)*(l-1)+d+1, id[ihid], param; useview=true)
                     end
                 end
             end
-            $layer(embedding,w,r,gatesview)
+            $layer(embedding,r.w,r,gatesview)
         end
     end
 end
