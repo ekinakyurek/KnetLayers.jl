@@ -5,3 +5,4 @@
 @time include("rnn.jl")
 @time include("loss.jl")
 @time include("special.jl")
+@time include("data.jl")
