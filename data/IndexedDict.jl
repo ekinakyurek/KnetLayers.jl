@@ -69,7 +69,7 @@ length(d::IndexedDict) = length(d.toElement)
 getindex(d::IndexedDict,inds::Integer) = d.toElement[inds]
 getindex(d::IndexedDict{T},inds::T) where T = d.toIndex[inds]
 getindex(d::IndexedDict{T}, elements::Array{T,1}) where T = map(e->d[e], elements)
-getindex(d::IndexedDict, inds::Array{<:Integer,1}) = d.toElement[inds]
+getindex(d::IndexedDict, inds::Array{<:Integer}) = d.toElement[inds]
 append!(d1::IndexedDict{T}, d2::IndexedDict{T}) where T = append!(d1,d2.toElement)
 
 function push!(d::IndexedDict, element)
