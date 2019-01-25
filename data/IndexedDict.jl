@@ -3,6 +3,7 @@ import Base: get, length, getindex, push!, append!
     IndexedDict{T}
 
 A data structure for vocabulary in NLP Models, or any other categorical inputs
+details: http://www.ekinakyurek.com/indexeddict/
 
 ```JULIA
 julia> data = "this is an example data with example words"

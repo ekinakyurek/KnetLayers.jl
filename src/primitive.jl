@@ -19,7 +19,7 @@ end
 
 Multiply(;input::Int, output::Int, winit=xavier, atype=arrtype) =  Multiply(param(output, input; init=winit, atype=atype))
 
-(m::Multiply)(x::Array{T}) where T<:Integer = m.weight[:,x] # Lookup (EmbedLayer)
+(m::Multiply)(x::Array{<:Integer}) = m.weight[:,x] # Lookup (EmbedLayer)
 
 # TODO: Find a faster (or compound) way for tensor-product
 function (m::Multiply)(x; keepsize=true)
