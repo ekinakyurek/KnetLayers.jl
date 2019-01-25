@@ -1,16 +1,17 @@
 module KnetLayers
 
 using Knet
-import Knet: save, load, rnnforw, rnninit
-export gpu, knetgc, KnetArray, relu, sigm, elu, invx, mat, bmm,
-       Data, minibatch,
-       param, param0, params,
-       logp, logsumexp, nll, bce, logistic, accuracy, zeroone, dropout,
-       SGD, Sgd, Momentum, Nesterov, Adam, Adagrad, Adadelta, Rmsprop, update!, optimizers,
-       gaussian, xavier, bilinear, setseed,
-       train!, train, converge, converge!,
-       hyperband, goldensection, cpucopy, gpucopy,
-       value, grad, cat1d, Param, @diff, @zerograd
+import Knet: save, load, gc, rnnforw, rnninit
+export gpu, KnetArray,
+    relu, sigm, elu, invx, mat, bmm,
+    logp, logsumexp, nll, bce, logistic, accuracy, zeroone, dropout,
+    Data, minibatch,
+    param, param0, params,
+    gaussian, xavier, bilinear, setseed,
+    SGD, Momentum, Nesterov, Adam, Adagrad, Adadelta, Rmsprop, update!, optimizers,
+    train!, train, converge, converge!, adam!, sgd!, nesterov!, rmsprop!,
+    hyperband, goldensection, cpucopy, gpucopy,
+    value, grad, cat1d, Param, @diff, @zerograd
 
 """
     KnetLayers.dir(path...)
@@ -41,6 +42,7 @@ include("cnn.jl");         export Pool,UnPool,DeConv,Conv
 include("special.jl");     export MLP
 include("rnn.jl");         export RNN,SRNN,LSTM,GRU,RNNOutput,PadRNNOutput,PadSequenceArray
 include("chain.jl");       export Chain
+include("../data/IndexedDict.jl");
 
 
 end # module
