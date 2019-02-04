@@ -4,7 +4,7 @@ using Knet
 import Knet: save, load, gc, rnnforw, rnninit
 export gpu, KnetArray,
     relu, sigm, elu, invx, mat, bmm,
-    logp, logsumexp, nll, bce, logistic, accuracy, zeroone, dropout,
+    logp, logsumexp, nll, bce, logistic, accuracy, zeroone, dropout, softmax,
     Data, minibatch,
     param, param0, params,
     gaussian, xavier, bilinear, setseed,
