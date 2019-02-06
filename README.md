@@ -41,9 +41,13 @@ progress!(sgd(model,repeat(dtrn,EPOCH)))
 
 1) [MNIST-MLP](./examples/mnist.jl)
 
-2) [ResNet](./examples/resnet.jl)
+2) [ResNet: Residual Networks for Image Recognition](./examples/resnet.jl)
 
-3) [Seq2Seq](./examples/s2smodel.jl)
+3) [S2S: Sequence to Sequence Reccurent Model](./examples/s2smodel.jl)
+
+4) [Morse.jl: Morphological Analyzer+Lemmatizer](https://github.com/ekinakyurek/Morse.jl)
+
+5) [MAC Network: Memory-Attention-Composition Network for Visual Question Answering](https://github.com/ekinakyurek/Mac-Network)
 
 ## [Exported Layers Refence](https://ekinakyurek.github.io/KnetLayers.jl/latest/reference.html#Function-Index-1)
 
