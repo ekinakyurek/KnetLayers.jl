@@ -7,7 +7,7 @@
 
 KnetLayers provides configurable deep learning layers for [Knet](https://github.com/denizyuret/Knet.jl), fostering your model development. You are able to use Knet and [AutoGrad](https://github.com/denizyuret/AutoGrad.jl) functionalities without adding them to current workspace.
 
-## How doest it looks like ?
+## How does it look like ?
 ```JULIA
 model = Chain(Dense(input=768, output=128, activation=Sigm()),
 	          Dense(input=128, output=10, activation=nothing))
