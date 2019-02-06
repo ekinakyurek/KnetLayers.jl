@@ -10,7 +10,7 @@ KnetLayers provides configurable deep learning layers for [Knet](https://github.
 ## How does it look like ?
 ```JULIA
 model = Chain(Dense(input=768, output=128, activation=Sigm()),
-	          Dense(input=128, output=10, activation=nothing))
+	      Dense(input=128, output=10, activation=nothing))
 
 loss(model, x, y) = nll(model(x), y)
 ```
