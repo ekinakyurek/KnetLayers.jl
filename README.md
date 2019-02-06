@@ -7,7 +7,7 @@
 
 KnetLayers provides configurable deep learning layers for [Knet](https://github.com/denizyuret/Knet.jl), fostering your model development. You are able to use Knet and [AutoGrad](https://github.com/denizyuret/AutoGrad.jl) functionalities without adding them to current workspace.
 
-## How does it look like ?
+## Overview
 ```JULIA
 model = Chain(Dense(input=768, output=128, activation=Sigm()),
 	      Dense(input=128, output=10, activation=nothing))
@@ -15,7 +15,7 @@ model = Chain(Dense(input=768, output=128, activation=Sigm()),
 loss(model, x, y) = nll(model(x), y)
 ```
 
-## How does MNIST training look like?
+## Getting Started: Train an MNIST model
 ```Julia
 using Knet, KnetLayers
 import Knet: Data
@@ -24,9 +24,9 @@ include(Knet.dir("data","mnist.jl"))
 dtrn,dtst = mnistdata(xsize=(784,:)); # dtrn and dtst = [ (x1,y1), (x2,y2), ... ] where xi,yi are
 
 #Model
+HIDDEN_SIZES = [100,50]
 (m::MLP)(x,y) = nll(m(x),y)
 (m::MLP)(d::Data) = mean(m(x,y) for (x,y) in d)
-HIDDEN_SIZES = [100,50]
 model = MLP(784,HIDDEN_SIZES...,10)
 
 #Train
