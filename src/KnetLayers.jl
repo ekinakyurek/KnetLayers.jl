@@ -9,7 +9,8 @@ export gpu, KnetArray,
     param, param0, params,
     gaussian, xavier, bilinear, setseed,
     SGD, Momentum, Nesterov, Adam, Adagrad, Adadelta, Rmsprop, update!, optimizers,
-    train!, train, converge, converge!, adam!, sgd!, nesterov!, rmsprop!,
+    train!, converge!, adam!, sgd!, nesterov!, rmsprop!, progress!,
+    adam, converge, train, sgd, nesterov, rmsprop, progress,
     hyperband, goldensection, cpucopy, gpucopy,
     value, grad, cat1d, Param, @diff, @zerograd
 
