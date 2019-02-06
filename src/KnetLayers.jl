@@ -24,8 +24,11 @@ julia> KnetLayers.dir("src")
 """
 dir(path...) = joinpath(dirname(@__DIR__),path...)
 seed! = Knet.seed!
-#Array type for paramater initialization
-arrtype = gpu()>=0 ? KnetArray{Float32} : Array{Float32}
+
+arrtype = Array{Float32}
+function __init__()
+    global arrtype = gpu()>=0 ? KnetArray{Float32} : Array{Float32}
+end
 #Setters for atype
 settype!(t::T) where T<:Type{KnetArray{V}} where V <: AbstractFloat = gpu()>=0 ? (global arrtype=t) : error("No GPU available")
 settype!(t::T) where T<:Type{Array{V}} where V <: AbstractFloat = (global arrtype=t)
@@ -43,6 +46,5 @@ include("special.jl");     export MLP
 include("rnn.jl");         export RNN,SRNN,LSTM,GRU,RNNOutput,PadRNNOutput,PadSequenceArray
 include("chain.jl");       export Chain
 include("../data/IndexedDict.jl");
-
 
 end # module
