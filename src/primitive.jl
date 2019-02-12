@@ -30,7 +30,7 @@ function (m::Multiply)(x; keepsize=true)
     end
 end
 
-Base.show(io::IO,m::Multiply) = print(io,"P(input=",size(m.weight,2)," output=",size(m.weight,1),")")
+Base.show(io::IO,m::Multiply{P}) where P = print(io,"($P,input=",size(m.weight,2)," output=",size(m.weight,1),")")
 
 """
     Embed(input=inputSize, output=embedSize, winit=xavier, atype=KnetLayers.arrtype)
@@ -116,7 +116,7 @@ end
 @inline (m::Dense{Nothing})(x) = m.linear(x)
 @inline (m::Dense{<:Activation})(x)= m.activation(m.linear(x))
 
-Base.show(io::IO, x::Dense) = print(io,typeof(x),x.linear)
+Base.show(io::IO, x::Dense) = print(io,typeof(x),"(",x.linear,")")
 #TO-DO: Remove after the issue is resolved:
 #https://github.com/denizyuret/Knet.jl/issues/418
 """
@@ -151,4 +151,4 @@ function BatchNorm(channels::Int; usegpu = arrtype <: KnetArray, dataType=eltype
     BatchNorm(p,m)
 end
 @inline (m::BatchNorm)(x;o...) = batchnorm(x,m.moments,m.params;o...)
-Base.show(io::IO,x::BatchNorm{P}) where P = print(io,BatchNorm,"(",x.params,", ",x.moments,")")
+Base.show(io::IO,x::BatchNorm) where P = print(io,BatchNorm,"(",x.params,", ",x.moments,")")
