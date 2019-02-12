@@ -14,7 +14,7 @@ m(x) == m[2](m[1](x))
 `m[1:3](x)` will calculate the output of the first three layers.
 """
 struct Chain{T<:Tuple}
-  layers::T
+   layers::T
    Chain(xs...) = new{typeof(xs)}(xs)
 end
 

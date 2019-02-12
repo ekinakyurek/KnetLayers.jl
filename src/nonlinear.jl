@@ -54,7 +54,7 @@ mutable struct Dropout <: Activation
     p::Real
 end
 Dropout(;p=0) = Dropout(p)
-@inline (l::Dropout)(x; enable=true) = dropout(x,l.p)
+@inline (l::Dropout)(x) = dropout(x,l.p)
 
 """
     LogSoftMax(dims=:)

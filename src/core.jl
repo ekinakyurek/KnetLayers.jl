@@ -8,4 +8,4 @@ abstract type Loss <: Layer end
 
 abstract type Activation <: Layer end
 
-abstract type AbstractRNN <: Layer end
+abstract type AbstractRNN{Params, Embed} <: Layer end

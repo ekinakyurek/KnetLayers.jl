@@ -13,14 +13,11 @@ By default parameters initialized with xavier, you may change it with `winit` ar
 * `atype=KnetLayers.arrtype` : array type for parameters.
    Default value is KnetArray{Float32} if you have gpu device. Otherwise it is Array{Float32}
 """
-mutable struct Multiply <: Layer
-    weight
+mutable struct Multiply{P} <: Layer
+    weight::P
 end
-
-Multiply(;input::Int, output::Int, winit=xavier, atype=arrtype) =  Multiply(param(output, input; init=winit, atype=atype))
-
+Multiply(;input::Int, output::Int, winit=xavier, atype=arrtype) = Multiply(param(output, input; init=winit, atype=atype))
 @inline (m::Multiply)(x::Array{<:Integer}) = m.weight[:,x] # Lookup (EmbedLayer)
-Base.show(io::IO,m::Multiply) = print(io,"P(input=",size(m.weight,2)," output=",size(m.weight,1),")")
 
 # TODO: Find a faster (or compound) way for tensor-product
 function (m::Multiply)(x; keepsize=true)
@@ -32,6 +29,8 @@ function (m::Multiply)(x; keepsize=true)
         return m.weight * x
     end
 end
+
+Base.show(io::IO,m::Multiply) = print(io,"P(input=",size(m.weight,2)," output=",size(m.weight,1),")")
 
 """
     Embed(input=inputSize, output=embedSize, winit=xavier, atype=KnetLayers.arrtype)
@@ -84,12 +83,12 @@ mutable struct Linear <: Layer
     mult::Multiply
     bias::Bias
 end
-
 function Linear(;input::Int, output::Int, winit=xavier, binit=zeros, atype=arrtype)
-    Linear(Multiply(input=input, output=output, winit=winit, atype=atype),param(output, init=binit, atype=atype))
+    Linear(Multiply(input=input, output=output, winit=winit, atype=atype),Bias(output, init=binit, atype=atype))
 end
 @inline (m::Linear)(x) = m.bias(m.mult(x))
-Base.show(io::IO,m::Linear) = print(io,Linear,m.mult)
+
+Base.show(io::IO,m::Linear) = print(io,Linear,"(",m.mult,")")
 
 const ActOrNothing=Union{Activation,Nothing}
 """
@@ -114,11 +113,10 @@ end
 function Dense(;input::Int, output::Int, activation::ActOrNothing=ReLU(), winit=xavier, binit=zeros, atype=arrtype)
     Dense(Linear(input=input, output=output, winit=winit, binit=binit, atype=atype), activation)
 end
-Base.show(io::IO, x::Dense) = print(io,typeof(x),x.linear)
 @inline (m::Dense{Nothing})(x) = m.linear(x)
 @inline (m::Dense{<:Activation})(x)= m.activation(m.linear(x))
 
-
+Base.show(io::IO, x::Dense) = print(io,typeof(x),x.linear)
 #TO-DO: Remove after the issue is resolved:
 #https://github.com/denizyuret/Knet.jl/issues/418
 """
@@ -141,15 +139,16 @@ of the form `(eltype, dims...)->data`. `zeros` is a good option.
  stored in the moments argument are used. Default value is true when at least one
  of x and params is AutoGrad.Value, false otherwise.
 """
-mutable struct BatchNorm <: Layer
-    params
+mutable struct BatchNorm{P} <: Layer
+    params::P
     moments::Knet.BNMoments
 end
 
 function BatchNorm(channels::Int; usegpu = arrtype <: KnetArray, dataType=eltype(arrtype), o...)
     w = bnparams(dataType,channels)
     m = bnmoments(;o...)
-    BatchNorm(usegpu ? Param(KnetArray(w)) : Param(w),m)
+    p = usegpu ? Param(KnetArray(w)) : Param(w)
+    BatchNorm(p,m)
 end
 @inline (m::BatchNorm)(x;o...) = batchnorm(x,m.moments,m.params;o...)
-Base.show(io::IO,x::BatchNorm) = print(io,x.moments)
+Base.show(io::IO,x::BatchNorm{P}) where P = print(io,BatchNorm,"(",x.params,", ",x.moments,")")
