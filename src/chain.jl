@@ -29,3 +29,9 @@ applychain(fs::Tuple, x) = applychain(Base.tail(fs), first(fs)(x))
 Base.getindex(c::Chain, i::AbstractArray) = Chain(c.layers[i]...)
 Base.getindex(c::Chain, i::Integer) = c.layers[i]
 Base.getindex(c::Chain, ::Colon) = c
+
+function Base.show(io::IO, c::Chain)
+  print(io, "Chain(")
+  join(io, c.layers, ", ")
+  print(io, ")")
+end
