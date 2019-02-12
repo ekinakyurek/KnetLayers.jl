@@ -8,8 +8,8 @@ end
 Sampling{T}(;window=2, padding=0, stride=window, mode=0, maxpoolingNanOpt=0, alpha=1) where T <: Function =
     Sampling{T}((window=window, padding=padding, stride=stride, mode=mode, maxpoolingNanOpt=maxpoolingNanOpt, alpha=alpha))
 
-(m::Sampling{typeof(pool)})(x)   =  pool(x;m.options...)
-(m::Sampling{typeof(unpool)})(x) =  unpool(x;m.options...)
+@inline (m::Sampling{typeof(pool)})(x)   =  pool(x;m.options...)
+@inline (m::Sampling{typeof(unpool)})(x) =  unpool(x;m.options...)
 
 """
     Pool(kwargs...)
@@ -48,7 +48,7 @@ propagated if 1.
 * alpha=1: can be used to scale the result.
 
 """
-Pool(;o...) = Sampling{typeof(pool)}(;o...)
+Pool = Sampling{typeof(pool)}
 
 """
     UnPool(kwargs...)
@@ -58,33 +58,33 @@ Pool(;o...) = Sampling{typeof(pool)}(;o...)
 
     x == pool(unpool(x;o...); o...)
 """
-UnPool(;o...) = Sampling{typeof(unpool)}(;o...)
+UnPool = Sampling{typeof(unpool)}
 ####
 #### Filtering
 ####
-mutable struct Filtering{T<:Function} <: Layer
+mutable struct Filtering{T<:Function,A<:ActOrNothing,V<:Bias} <: Layer
     weight
-    bias
-    activation
+    bias::V
+    activation::A
     options::NamedTuple
 end
 
 function Filtering{T}(;height::Integer, width::Integer, inout::Pair=1=>1,
-                         winit=xavier, binit=zeros, atype=arrtype,
-                         activation=ReLU(), opts...) where T <: Function
+                       winit=xavier, binit=zeros, atype=arrtype,
+                       activation::ActOrNothing=ReLU(), opts...) where T <: Function
     wsize = T===typeof(conv4) ? inout : reverse(inout)
     w = param(height,width,wsize...; init=winit, atype=atype)
-    b = binit !== nothing ? param(1,1,inout[2],1; init=binit, atype=atype) : nothing
-    Filtering{T}(w, b, activation; opts...)
+    b = binit !== nothing ? Bias(1,1,inout[2],1; init=binit, atype=atype) : Bias(nothing)
+    Filtering{T,typeof(activation),typeof(b)}(w, b, activation; opts...)
 end
 
-Filtering{T}(w, b, activation; stride=1, padding=0, mode=0, dilation=1, alpha=1) where T <: Function =
-    Filtering{T}(w, b, activation, (stride=stride, dilation=dilation, mode=mode, alpha=alpha, padding=padding))
+Filtering{T,A,V}(w, b, activation; stride=1, padding=0, mode=0, dilation=1, alpha=1) where {T <: Function, A<:ActOrNothing,V<:Bias} =
+    Filtering{T,A,V}(w, b, activation, (stride=stride, dilation=dilation, mode=mode, alpha=alpha, padding=padding))
 
-(m::Filtering{typeof(conv4)})(x) =
+@inline (m::Filtering{typeof(conv4)})(x) =
      postConv(m, conv4(m.weight, make4D(x); m.options...), ndims(x))
 
-(m::Filtering{typeof(deconv4)})(x) =
+@inline (m::Filtering{typeof(deconv4)})(x) =
      postConv(m, deconv4(m.weight, make4D(x); m.options...), ndims(x))
 
 """
@@ -119,7 +119,7 @@ or an tuple with entries for each spatial dimension.
 * `handle`: handle to a previously created cuDNN context. Defaults to a Knet allocated handle.
 
 """
-Conv(;height::Int, width::Int, o...) = Filtering{typeof(conv4)}(;height=height, width=width, o...)
+Conv = Filtering{typeof(conv4)}
 
 """
     DeConv(;height=filterHeight, width=filterWidth, inout=1=>1, kwargs...)
@@ -153,23 +153,22 @@ or an tuple with entries for each spatial dimension.
 * `alpha=1`: can be used to scale the result.
 * `handle`: handle to a previously created cuDNN context. Defaults to a Knet allocated handle.
 """
-DeConv(;height::Integer, width::Integer, o...) = Filtering{typeof(deconv4)}(;height=height, width=width, o...)
+DeConv = Filtering{typeof(deconv4)}
 
 ###
 ### Utils
 ###
-function make4D(x)
+@inline function make4D(x)
     n = ndims(x)
     @assert n < 5 "filtering layers currently supports 4 dimensional arrays"
     n == 4 ? x : reshape(x,size(x)...,ntuple(x->1, 4-n)...)
 end
 
-function postConv(m::Filtering, y, dims)
-    if m.bias !== nothing
-        y = y .+ m.bias
-    end
-    if m.activation !== nothing
-        y = m.activation(y)
+@inline function postConv(m::Filtering{<:Any,A,<:Any}, y, dims) where A
+    if A !== nothing
+        y = m.activation(m.bias(y))
+    else
+        y = m.bias(y)
     end
     return dims>3 ? y : reshape(y,size(y)[1:dims])
 end

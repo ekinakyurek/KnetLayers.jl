@@ -5,7 +5,7 @@
 Rectified Linear Unit function.
 """
 struct ReLU <: Activation end
-(l::ReLU)(x) = relu.(x)
+@inline (l::ReLU)(x) = relu.(x)
 
 """
     Sigm()
@@ -14,7 +14,7 @@ struct ReLU <: Activation end
 Sigmoid function
 """
 struct Sigm <: Activation end
-(l::Sigm)(x) = sigm.(x)
+@inline (l::Sigm)(x) = sigm.(x)
 
 """
     Tanh()
@@ -23,7 +23,7 @@ struct Sigm <: Activation end
 Tangent hyperbolic function
 """
 struct Tanh <: Activation end
-(l::Tanh)(x) = tanh.(x)
+@inline (l::Tanh)(x) = tanh.(x)
 
 
 """
@@ -33,7 +33,7 @@ struct Tanh <: Activation end
 Exponential Linear Unit nonlineariy.
 """
 struct ELU <: Activation end
-(l::ELU)(x) = elu.(x)
+@inline (l::ELU)(x) = elu.(x)
 
 """
     LeakyReLU(α=0.2)
@@ -43,7 +43,7 @@ mutable struct LeakyReLU <: Activation
     α::AbstractFloat
     LeakyReLU(alpha::AbstractFloat=0.2) = new(alpha)
 end
-(l::LeakyReLU)(x) = relu.(x) .+ l.α*min.(0,x)
+@inline (l::LeakyReLU)(x) = relu.(x) .+ l.α*min.(0,x)
 
 """
     Dropout(p=0)
@@ -54,7 +54,7 @@ mutable struct Dropout <: Activation
     p::Real
 end
 Dropout(;p=0) = Dropout(p)
-(l::Dropout)(x; enable=true) = enable ? dropout(x,l.p) : x
+@inline (l::Dropout)(x; enable=true) = dropout(x,l.p)
 
 """
     LogSoftMax(dims=:)
@@ -69,7 +69,7 @@ struct LogSoftMax <: Activation
     dims::Union{Integer,Colon}
 end
 LogSoftMax(;dims=:) = LogSoftMax(dims)
-(l::LogSoftMax)(x) = logp(x;dims=l.dims)
+@inline (l::LogSoftMax)(x) = logp(x;dims=l.dims)
 
 """
     SoftMax(dims=:)
@@ -84,7 +84,7 @@ struct SoftMax <: Activation
     dims::Union{Integer,Colon}
 end
 SoftMax(;dims=:) = SoftMax(dims)
-(l::SoftMax)(x) = softmax(x;dims=l.dims)
+@inline (l::SoftMax)(x) = softmax(x;dims=l.dims)
 
 """
     LogSumExp(dims=:)
@@ -99,4 +99,4 @@ struct LogSumExp <: Activation
     dims::Union{Integer,Colon}
 end
 LogSumExp(;dims=:) = LogSumExp(dims)
-(l::LogSumExp)(x) = logsumexp(x;dims=l.dims)
+@inline (l::LogSumExp)(x) = logsumexp(x;dims=l.dims)

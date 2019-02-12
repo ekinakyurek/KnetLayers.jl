@@ -89,34 +89,51 @@ for layer in (:SRNN, :LSTM, :GRU)
             embedding::Union{Nothing,Embed}
             params
             specs::Knet.RNN
-            gatesview::Dict
+            gatesview::Union{Nothing,Dict}
         end
 
-        (m::$layer)(x,h...;o...) = RNNOutput(_forw(m,x,h...;o...)...)
+        @inline (m::$layer)(x,h...;o...) = RNNOutput(_forw(m,x,h...;o...)...)
 
         function $layer(;input::Integer, hidden::Integer, embed=nothing, activation=:relu,
                          usegpu=(arrtype <: KnetArray), dataType=eltype(arrtype), o...)
             embedding,inputSize = _getEmbed(input,embed)
             rnnType = $layer==SRNN ? activation : Symbol(lowercase($layername))
             r = Knet.RNN(inputSize, hidden; rnnType=rnnType, usegpu=usegpu, dataType=dataType, o...)
-            gatesview  = Dict{Symbol,Any}()
-            for l in 1:r.numLayers, d in 0:r.direction
-                for (g,id) in gate_mappings($layer)
-                    for (ih,ihid) in input_mappings, (ty,param) in param_mappings
-                         gatesview[Symbol(ty,ih,g,l,d)] = rnnparam(r, (r.direction+1)*(l-1)+d+1, id[ihid], param; useview=true)
-                    end
-                end
-            end
-            $layer(embedding,r.w,r,gatesview)
+            $layer(embedding,r.w,r,gatesview($layer,r))
         end
     end
 end
+
 gate_mappings(::Type{SRNN}) = Dict(:h=>(1,2))
 gate_mappings(::Type{GRU})  = Dict(:r=>(1,4),:u=>(2,5),:n=>(3,6))
 gate_mappings(::Type{LSTM}) = Dict(:i=>(1,5),:f=>(2,6),:n=>(3,7),:o=>(4,8))
 const input_mappings = Dict(:i=>1,:h=>2)
 const param_mappings = Dict(:w=>1,:b=>2)
 
+@inline Base.show(io::IO, r::AbstractRNN) = Base.show(io,r.specs)
+ 
+function gatesview(T::Type{<:AbstractRNN},r::RNN)
+    gatesview = Dict{Symbol,Any}()
+    for l in 1:r.numLayers, d in 0:r.direction
+        for (g,id) in gate_mappings(T)
+            for (ih,ihid) in input_mappings, (ty,param) in param_mappings
+                gatesview[Symbol(ty,ih,g,l,d)] = rnnparam(r, (r.direction+1)*(l-1)+d+1, id[ihid], param; useview=true)
+            end
+        end
+    end
+    return gatesview
+end
+
+function _ser(r::T, s::IdDict, m::typeof(Knet.JLDMODE)) where T <: AbstractRNN
+    if !haskey(s,r)
+        if r.gatesview !== nothing
+            s[r] = T(_ser(r.embedding,s,m), _ser(r.params,s,m), _ser(r.specs,s,m), nothing)
+        else
+            s[r] = T(_ser(r.embedding,s,m), _ser(r.params,s,m), _ser(r.specs,s,m), gatesview(T,s[r.specs]))
+        end
+    end
+    return s[r]
+end
 ####
 #### Utils
 ####
@@ -239,7 +256,7 @@ function _forw(rnn::AbstractRNN,batch::Vector{Vector{T}},h...;sorted=true,o...) 
     y,hidden,memory,inds
 end
 
-function _forw(rnn::AbstractRNN,x,h...;o...)
+@inline function _forw(rnn::AbstractRNN,x,h...;o...)
     if rnn.embedding === nothing
         y,hidden,memory,_ = rnnforw(rnn.specs,rnn.params,x,h...;o...)
     else
@@ -248,7 +265,7 @@ function _forw(rnn::AbstractRNN,x,h...;o...)
     y,hidden,memory,nothing
 end
 
-_sort3D(hidden::Array,inds) = hidden[:,inds,:]
+@inline _sort3D(hidden::Array,inds) = hidden[:,inds,:]
 function _sort3D(h::KnetArray,inds)
     container = [];
     for i=1:size(h,3)

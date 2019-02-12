@@ -18,7 +18,7 @@ struct CrossEntropyLoss <: Loss
     dims::Integer
 end
 CrossEntropyLoss(;dims=1) = CrossEntropyLoss(dims)
-(l::CrossEntropyLoss)(y,answers::Array{<:Integer}; average=true) = nllmask(y, answers; dims=l.dims, average=average)
+@inline (l::CrossEntropyLoss)(y,answers::Array{<:Integer}; average=true) = nllmask(y, answers; dims=l.dims, average=average)
 
 """
     BCELoss(average=true)
@@ -27,7 +27,7 @@ CrossEntropyLoss(;dims=1) = CrossEntropyLoss(dims)
     mean|sum(answers * log(p) + (1-answers)*log(1-p)) where p is equal to 1/(1 + exp.(scores)). See also LogisticLoss.
 """
 struct BCELoss <: Loss end
-(l::BCELoss)(y,answers::Array{<:Integer})=bce(y,answers)
+@inline (l::BCELoss)(y,answers::Array{<:Integer})=bce(y,answers)
 
 """
     LogisticLoss(average=true)
@@ -36,7 +36,7 @@ struct BCELoss <: Loss end
     exp(-answers*scores))). See also `BCELoss`.
 """
 struct LogisticLoss <: Loss end
-(l::LogisticLoss)(y,answers::Array{<:Integer})=logistic(y,answers)
+@inline (l::LogisticLoss)(y,answers::Array{<:Integer})=logistic(y,answers)
 
 ####
 #### Utils
