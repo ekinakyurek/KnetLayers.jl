@@ -62,8 +62,8 @@ UnPool = Sampling{typeof(unpool)}
 ####
 #### Filtering
 ####
-mutable struct Filtering{T<:Function,A<:ActOrNothing,V<:Bias} <: Layer
-    weight
+mutable struct Filtering{T<:Function,P,A<:ActOrNothing,V<:Bias} <: Layer
+    weight::P
     bias::V
     activation::A
     options::NamedTuple
@@ -75,11 +75,11 @@ function Filtering{T}(;height::Integer, width::Integer, inout::Pair=1=>1,
     wsize = T===typeof(conv4) ? inout : reverse(inout)
     w = param(height,width,wsize...; init=winit, atype=atype)
     b = binit !== nothing ? Bias(1,1,inout[2],1; init=binit, atype=atype) : Bias(nothing)
-    Filtering{T,typeof(activation),typeof(b)}(w, b, activation; opts...)
+    Filtering{T}(w, b, activation; opts...)
 end
 
-Filtering{T,A,V}(w, b, activation; stride=1, padding=0, mode=0, upscale=1, alpha=1) where {T <: Function, A<:ActOrNothing,V<:Bias} =
-    Filtering{T,A,V}(w, b, activation, (stride=stride, upscale=upscale, mode=mode, alpha=alpha, padding=padding))
+Filtering{T}(w, b, activation; stride=1, padding=0, mode=0, upscale=1, alpha=1) where T =
+    Filtering{T,typeof(w),typeof(activation),typeof(b)}(w, b, activation, (stride=stride, upscale=upscale, mode=mode, alpha=alpha, padding=padding))
 
 @inline (m::Filtering{typeof(conv4)})(x) =
      postConv(m, conv4(m.weight, make4D(x); m.options...), ndims(x))
@@ -164,8 +164,8 @@ DeConv = Filtering{typeof(deconv4)}
     n == 4 ? x : reshape(x,size(x)...,ntuple(x->1, 4-n)...)
 end
 
-@inline function postConv(m::Filtering{<:Any,A,<:Any}, y, dims) where A
-    if A !== nothing
+@inline function postConv(m::Filtering{<:Any,<:Any,A,<:Any}, y, dims) where A
+    if A !== Nothing
         y = m.activation(m.bias(y))
     else
         y = m.bias(y)

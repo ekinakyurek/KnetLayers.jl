@@ -22,11 +22,19 @@ See `indices` and `PadRNNOutput` to get correct time outputs for a specific inst
 
 `indices` is corresponding instace indices for your `RNNOutput.y`. You may call `yi = y[:,indices[i]]`.
 """
-struct RNNOutput{T,V,Z}
+const SortOrNothing = Union{Vector{Vector{Int}},Nothing}
+struct RNNOutput{T,V,Z,S<:SortOrNothing}
     y::T
     hidden::V
     memory::Z
-    indices::Union{Vector{Vector{Int}},Nothing}
+    indices::S
+end
+function Base.show(io::IO,R::RNNOutput{T,V,Z,S}) where {T,V,Z,S}
+    print(io,"RNNOutput(y: $T $(size(R.y))")
+    V !== Nothing && print(io,", hidden : $V$(size(R.hidden))")
+    Z !== Nothing && print(io,", memory : $Z$(size(R.memory))")
+    S !== Nothing && print(io,", indices: $S$(size(R.indices))")
+    print(io,")")
 end
 
 ####
@@ -82,12 +90,14 @@ see RNNOutput
 """
 AbstractRNN
 
+const EmbedOrNothing = Union{Embed,Nothing}
+
 for layer in (:SRNN, :LSTM, :GRU)
     layername=string(layer)
     @eval begin
-        mutable struct $layer <: AbstractRNN
-            embedding::Union{Nothing,Embed}
-            params
+        mutable struct $layer{P,E} <: AbstractRNN{P,E}
+            embedding::E
+            params::P
             specs::Knet.RNN
             gatesview::Union{Nothing,Dict}
         end
@@ -110,8 +120,8 @@ gate_mappings(::Type{LSTM}) = Dict(:i=>(1,5),:f=>(2,6),:n=>(3,7),:o=>(4,8))
 const input_mappings = Dict(:i=>1,:h=>2)
 const param_mappings = Dict(:w=>1,:b=>2)
 
-@inline Base.show(io::IO, r::AbstractRNN) = Base.show(io,r.specs)
- 
+@inline Base.show(io::IO, r::AbstractRNN{P,E}) where {P,E} = print(io,r.specs,"{params: ",P," embedding: ",E,"}")
+
 function gatesview(T::Type{<:AbstractRNN},r::RNN)
     gatesview = Dict{Symbol,Any}()
     for l in 1:r.numLayers, d in 0:r.direction
@@ -228,15 +238,13 @@ _getEmbed(input::Int,embed::Nothing) = (nothing,input)
 _getEmbed(input::Int,embed::Embed)   = size(embed.w,2) == input ? (embed,input) : error("dimension mismatch in your embedding")
 _getEmbed(input::Int,embed::Integer) = (Embed(input=input,output=embed),embed)
 
-function _forw(rnn::AbstractRNN,seq::Array{T},h...;batchSizes=nothing,o...) where T<:Integer
-    rnn.embedding === nothing && error("rnn has no embedding!")
+function _forw(rnn::AbstractRNN{<:Any,<:Embed}, seq::Array{T}, h...;batchSizes=nothing, o...) where T<:Integer
     ndims(seq) == 1 && batchSizes === nothing && (seq = reshape(seq,1,length(seq)))
     y,hidden,memory,_ = rnnforw(rnn.specs,rnn.params,rnn.embedding(seq),h...;batchSizes=batchSizes,o...)
     return y,hidden,memory,nothing
 end
 
-function _forw(rnn::AbstractRNN,batch::Vector{Vector{T}},h...;sorted=true,o...) where T<:Integer
-    rnn.embedding === nothing && error("rnn has no embedding!")
+function _forw(rnn::AbstractRNN{<:Any,<:Embed},batch::Vector{Vector{T}},h...;sorted=true,o...) where T<:Integer
     if all(length.(batch).==length(batch[1]))
         return _forw(rnn,cat(batch...;dims=2)',h...;o...)
     end
@@ -256,8 +264,8 @@ function _forw(rnn::AbstractRNN,batch::Vector{Vector{T}},h...;sorted=true,o...) 
     y,hidden,memory,inds
 end
 
-@inline function _forw(rnn::AbstractRNN,x,h...;o...)
-    if rnn.embedding === nothing
+@inline function _forw(rnn::AbstractRNN{<:Any,E},x,h...;o...) where E
+    if E === nothing
         y,hidden,memory,_ = rnnforw(rnn.specs,rnn.params,x,h...;o...)
     else
         y,hidden,memory,_ = rnnforw(rnn.specs,rnn.params,rnn.embedding(x),h...;o...)
