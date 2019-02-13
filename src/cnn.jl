@@ -11,6 +11,8 @@ Sampling{T}(;window=2, padding=0, stride=window, mode=0, maxpoolingNanOpt=0, alp
 @inline (m::Sampling{typeof(pool)})(x)   =  pool(x;m.options...)
 @inline (m::Sampling{typeof(unpool)})(x) =  unpool(x;m.options...)
 
+Base.show(io::IO,m::Sampling{typeof(pool)}) = print(io,"Pool",m.options)
+Base.show(io::IO,m::Sampling{typeof(unpool)}) = print(io,"UnPool",m.options)
 """
     Pool(kwargs...)
     (::Sampling{typeof(pool)})(x)
@@ -70,12 +72,16 @@ mutable struct Filtering{T<:Function,P,A<:ActOrNothing,V<:Bias} <: Layer
 end
 
 function Filtering{T}(;height::Integer, width::Integer, inout::Pair=1=>1,
-                       winit=xavier, binit=zeros, atype=arrtype,
-                       activation::ActOrNothing=ReLU(), opts...) where T <: Function
+                       activation::ActOrNothing=ReLU(),
+                       winit=xavier, binit=zeros,
+                       atype=arrtype,
+                       opts...) where T <: Function
+
     wsize = T===typeof(conv4) ? inout : reverse(inout)
     w = param(height,width,wsize...; init=winit, atype=atype)
     b = binit !== nothing ? Bias(1,1,inout[2],1; init=binit, atype=atype) : Bias(nothing)
     Filtering{T}(w, b, activation; opts...)
+
 end
 
 Filtering{T}(w, b, activation; stride=1, padding=0, mode=0, dilation=1, alpha=1) where T =
@@ -84,8 +90,14 @@ Filtering{T}(w, b, activation; stride=1, padding=0, mode=0, dilation=1, alpha=1)
 @inline (m::Filtering{typeof(conv4)})(x) =
      postConv(m, conv4(m.weight, make4D(x); m.options...), ndims(x))
 
+Base.show(io::IO,m::Filtering{typeof(conv4),P,A,V}) where {P,A,V} =
+    print(io,"Conv{$P,$A,$V}",m.options)
+
 @inline (m::Filtering{typeof(deconv4)})(x) =
      postConv(m, deconv4(m.weight, make4D(x); m.options...), ndims(x))
+
+Base.show(io::IO,m::Filtering{typeof(deconv4),P,A,V}) where {P,A,V} =
+    print(io,"DeConv{$P,$A,$V}",m.options)
 
 """
     Conv(;height=filterHeight, width=filterWidth, inout = 1 => 1, kwargs...)
