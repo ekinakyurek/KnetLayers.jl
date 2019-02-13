@@ -95,6 +95,7 @@ const EmbedOrNothing = Union{Embed,Nothing}
 for layer in (:SRNN, :LSTM, :GRU)
     layername=string(layer)
     @eval begin
+
         mutable struct $layer{P,E} <: AbstractRNN{P,E}
             embedding::E
             params::P
@@ -141,8 +142,7 @@ function _ser(r::T, s::IdDict, m::typeof(Knet.JLDMODE)) where T <: AbstractRNN
         else
             s[r] = T(_ser(r.embedding,s,m), _ser(r.params,s,m), _ser(r.specs,s,m), gatesview(T,s[r.specs]))
         end
-    end
-    return s[r]
+    end; return s[r]
 end
 ####
 #### Utils
@@ -224,33 +224,23 @@ function _pack_sequence(batch::Vector{Vector{T}}) where T<:Integer
     return tokens,bsizes
 end
 
-function _batchSizes2indices(batchSizes)
-    B = batchSizes[1]
-    inds = Vector{Int}[]
-    for i=1:B
-        ind = i.+cumsum(filter(x->(x>=i),batchSizes)[1:end-1])
-        push!(inds,append!(Int[i],ind))
-    end
-    return inds
+@inline function _batchSizes2indices(batchSizes)
+        return map(1:batchSizes[1]) do i
+            @inbounds [i;i.+cumsum(filter(x->(x>=i),batchSizes)[1:end-1])]
+        end
 end
 
-_getEmbed(input::Int,embed::Nothing) = (nothing,input)
-_getEmbed(input::Int,embed::Embed)   = size(embed.w,2) == input ? (embed,input) : error("dimension mismatch in your embedding")
-_getEmbed(input::Int,embed::Integer) = (Embed(input=input,output=embed),embed)
-
-function _forw(rnn::AbstractRNN{<:Any,<:Embed}, seq::Array{T}, h...;batchSizes=nothing, o...) where T<:Integer
-    ndims(seq) == 1 && batchSizes === nothing && (seq = reshape(seq,1,length(seq)))
-    y,hidden,memory,_ = rnnforw(rnn.specs,rnn.params,rnn.embedding(seq),h...;batchSizes=batchSizes,o...)
-    return y,hidden,memory,nothing
-end
+@inline _getEmbed(input::Int,embed::Nothing) = (nothing,input)
+@inline _getEmbed(input::Int,embed::Embed)   = size(embed.w,2) == input ? (embed,input) : error("dimension mismatch in your embedding")
+@inline _getEmbed(input::Int,embed::Integer) = (Embed(input=input,output=embed),embed)
 
 function _forw(rnn::AbstractRNN{<:Any,<:Embed},batch::Vector{Vector{T}},h...;sorted=true,o...) where T<:Integer
     if all(length.(batch).==length(batch[1]))
-        return _forw(rnn,cat(batch...;dims=2)',h...;o...)
+        return _forw(rnn,permutedims(cat(batch...;dims=2),(2,1)),h...;o...)
     end
     if !sorted
-        v   = sortperm(batch;by=length,rev=true,alg=MergeSort)
-        rev = sortperm(v;alg=MergeSort)
+        v   = sortperm(batch; by=length, rev=true, alg=MergeSort)
+        rev = sortperm(v; alg=MergeSort)
         batch= batch[v]
     end
     tokens,bsizes = _pack_sequence(batch)
@@ -264,20 +254,25 @@ function _forw(rnn::AbstractRNN{<:Any,<:Embed},batch::Vector{Vector{T}},h...;sor
     y,hidden,memory,inds
 end
 
-@inline function _forw(rnn::AbstractRNN{<:Any,E},x,h...;o...) where E
-    if E === nothing
-        y,hidden,memory,_ = rnnforw(rnn.specs,rnn.params,x,h...;o...)
-    else
-        y,hidden,memory,_ = rnnforw(rnn.specs,rnn.params,rnn.embedding(x),h...;o...)
-    end
-    y,hidden,memory,nothing
+@inline function _forw(specs::Knet.RNN,params,x,h...;o...)
+    y,hidden,memory,_ = rnnforw(specs,params,x,h...;o...)
+    return y,hidden,memory,nothing
 end
 
-@inline _sort3D(hidden::Array,inds) = hidden[:,inds,:]
-function _sort3D(h::KnetArray,inds)
-    container = [];
-    for i=1:size(h,3)
-        push!(container,h[:,:,i][:,inds])
-    end
-    reshape(cat1d(container...),size(h))
+@inline _forw(rnn::AbstractRNN{<:Any,Nothing},x,h...;o...) =
+    _forw(rnn.specs,rnn.params,x,h...;o...)
+
+@inline _forw(rnn::AbstractRNN,x,h...;o...) =
+    _forw(rnn.specs, rnn.params, rnn.embedding(x),h...;o...)
+
+@inline function _forw(rnn::AbstractRNN{<:Any,<:Embed}, seq::Vector{T}, h...; batchSizes=nothing, o...) where T<:Integer
+     inp = batchSizes===nothing ? reshape(seq,1,length(seq)) : seq
+    _forw(rnn.specs, rnn.params, rnn.embedding(inp), h...; batchSizes=batchSizes,o...)
 end
+
+@inline _forw(rnn::AbstractRNN{<:Any,<:Nothing}, seq::Array{T},h...;o...) where T<:Integer =
+    error("Integer inputs can only be used with RNNs that has embeddings.")
+
+@inline _sort3D(hidden::Array,inds) = hidden[:,inds,:]
+@inline _sort3D(h::KnetArray,inds)  =
+    reshape(cat1d(map(i->h[:,:,i][:,inds],1:size(h,3))...),size(h))
