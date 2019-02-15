@@ -1,5 +1,3 @@
-include("header.jl")
-
 @testset "rnn" begin
     arrtype = KnetLayers.arrtype
     x    = arrtype(zeros(10,1))

@@ -1,8 +1,6 @@
-include("header.jl")
-
 @testset "loss" begin
 
-    arrtype = KnetLayers.arrtype;
+    arrtype = KnetLayers.arrtype
     x = arrtype(randn(10,10))
     indices = rand(1:10,10)
     l1 = CrossEntropyLoss(dims=2)

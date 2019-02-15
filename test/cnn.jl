@@ -1,5 +1,3 @@
-include("header.jl")
-
 @testset "cnn" begin
 
     arrtype = KnetLayers.arrtype
