@@ -50,7 +50,7 @@ propagated if 1.
 * alpha=1: can be used to scale the result.
 
 """
-Pool = Sampling{typeof(pool)}
+const Pool = Sampling{typeof(pool)}
 
 """
     UnPool(kwargs...)
@@ -60,7 +60,7 @@ Pool = Sampling{typeof(pool)}
 
     x == pool(unpool(x;o...); o...)
 """
-UnPool = Sampling{typeof(unpool)}
+const UnPool = Sampling{typeof(unpool)}
 ####
 #### Filtering
 ####
@@ -131,7 +131,7 @@ or an tuple with entries for each spatial dimension.
 * `handle`: handle to a previously created cuDNN context. Defaults to a Knet allocated handle.
 
 """
-Conv = Filtering{typeof(conv4)}
+const Conv = Filtering{typeof(conv4)}
 
 """
     DeConv(;height=filterHeight, width=filterWidth, inout=1=>1, kwargs...)
@@ -165,7 +165,7 @@ or an tuple with entries for each spatial dimension.
 * `alpha=1`: can be used to scale the result.
 * `handle`: handle to a previously created cuDNN context. Defaults to a Knet allocated handle.
 """
-DeConv = Filtering{typeof(deconv4)}
+const DeConv = Filtering{typeof(deconv4)}
 
 ###
 ### Utils

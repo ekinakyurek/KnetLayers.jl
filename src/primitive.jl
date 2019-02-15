@@ -52,7 +52,7 @@ Embed objects are callable with an input which is either and integer array
    Default value is KnetArray{Float32} if you have gpu device. Otherwise it is Array{Float32}
 
 """
-Embed = Multiply
+const Embed = Multiply
 
 struct Bias{T}
     b::T
