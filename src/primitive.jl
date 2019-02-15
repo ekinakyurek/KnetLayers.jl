@@ -29,9 +29,7 @@ function (m::Multiply)(x; keepsize=true)
         return m.weight * x
     end
 end
-
-Base.show(io::IO,m::Multiply{P}) where P = print(io,"($P,input=",size(m.weight,2)," output=",size(m.weight,1),")")
-
+Base.show(io::IO,m::Multiply{P}) where P = print(io,Multiply{P},"(input=",size(m.weight,2)," output=",size(m.weight,1),")")
 """
     Embed(input=inputSize, output=embedSize, winit=xavier, atype=KnetLayers.arrtype)
 Creates an embedding layer according to given `inputSize` and `embedSize` where `inputSize` is your number of unique items you want to embed, and `embedSize` is the size of output vectors.
@@ -56,8 +54,6 @@ Embed objects are callable with an input which is either and integer array
 """
 Embed = Multiply
 
-# TODO: find a better documentation style e.g put input : and output etc.
-# Input: Type of its input is an ::Array{T} where T<: Integer
 struct Bias{T}
     b::T
 end
@@ -65,7 +61,7 @@ end
 @inline (m::Bias{Nothing})(x) = x
 Bias(sizes...;atype=arrtype,o...) = Bias(param(sizes...;atype=atype, o...))
 Bias() = Bias(nothing)
-
+Base.show(io::IO,m::Bias{T}) where T = print(io,Bias{T},"(length=",length(m.b),")")
 """
     Linear(input=inputSize, output=outputSize, winit=xavier, binit=zeros, atype=KnetLayers.arrtype)
 
@@ -88,9 +84,7 @@ function Linear(;input::Int, output::Int, winit=xavier, binit=zeros, atype=arrty
 end
 @inline (m::Linear)(x) = m.bias(m.mult(x))
 
-Base.show(io::IO,m::Linear) = print(io,Linear,"(",m.mult,")")
-
-const ActOrNothing=Union{Activation,Nothing}
+#Base.show(io::IO,m::Linear) = print(io,Linear,"(",m.mult,")")
 """
     Dense(input=inputSize, output=outputSize, activation=ReLU(), winit=xavier, binit=zeros, atype=KnetLayers.arrtype)
 
@@ -117,6 +111,7 @@ end
 @inline (m::Dense{<:Activation})(x)= m.activation(m.linear(x))
 
 Base.show(io::IO, x::Dense) = print(io,typeof(x),"(",x.linear,")")
+
 #TO-DO: Remove after the issue is resolved:
 #https://github.com/denizyuret/Knet.jl/issues/418
 """
@@ -141,7 +136,7 @@ of the form `(eltype, dims...)->data`. `zeros` is a good option.
 """
 mutable struct BatchNorm{P} <: Layer
     params::P
-    moments::Knet.BNMoments
+    moments::BNMoments
 end
 
 function BatchNorm(channels::Int; usegpu = arrtype <: KnetArray, dataType=eltype(arrtype), o...)

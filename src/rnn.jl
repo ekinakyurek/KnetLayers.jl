@@ -1,6 +1,8 @@
+import Base.Iterators: product
 ####
 #### Output Structure
 ####
+
 """
     struct RNNOutput
         y
@@ -22,8 +24,7 @@ See `indices` and `PadRNNOutput` to get correct time outputs for a specific inst
 
 `indices` is corresponding instace indices for your `RNNOutput.y`. You may call `yi = y[:,indices[i]]`.
 """
-const SortOrNothing = Union{Vector{Vector{Int}},Nothing}
-struct RNNOutput{T,V,Z,S<:SortOrNothing}
+struct RNNOutput{T,V,Z,S<:VVecOrNothing}
     y::T
     hidden::V
     memory::Z
@@ -90,30 +91,49 @@ see RNNOutput
 """
 AbstractRNN
 
-const EmbedOrNothing = Union{Embed,Nothing}
-
 for layer in (:SRNN, :LSTM, :GRU)
     layername=string(layer)
     @eval begin
 
-        mutable struct $layer{P,E} <: AbstractRNN{P,E}
+        mutable struct $layer{P,E<:LayerOrNothing,G<:DictOrNothing} <: AbstractRNN{P,E}
             embedding::E
             params::P
-            specs::Knet.RNN
-            gatesview::Union{Nothing,Dict}
+            specs::RNN
+            gatesview::G
         end
 
         @inline (m::$layer)(x,h...;o...) = RNNOutput(_forw(m,x,h...;o...)...)
-
+        # FIXME: activation input is not compatible with rest of the package
         function $layer(;input::Integer, hidden::Integer, embed=nothing, activation=:relu,
                          usegpu=(arrtype <: KnetArray), dataType=eltype(arrtype), o...)
             embedding,inputSize = _getEmbed(input,embed)
             rnnType = $layer==SRNN ? activation : Symbol(lowercase($layername))
-            r = Knet.RNN(inputSize, hidden; rnnType=rnnType, usegpu=usegpu, dataType=dataType, o...)
+            r = RNN(inputSize, hidden; rnnType=rnnType, usegpu=usegpu, dataType=dataType, o...)
             $layer(embedding,r.w,r,gatesview($layer,r))
         end
     end
 end
+
+###
+### Internal Utils
+###
+function Base.show(io::IO, m::AbstractRNN{P,E}) where {P,E}
+    r = m.specs
+    embedSize,inputSize = m.embedding !== nothing ? size(m.embedding.weight) : (nothing,r.inputSize)
+    print(io, ("SRNN(ReLU){","SRNN(Tanh){","LSTM{","GRU{")[r.mode+1], "$P, $E}(input=", inputSize, ",hidden=", r.hiddenSize)
+    if embedSize!=nothing; print(io,",embed=",embedSize); end
+    if r.direction == 1; print(io, ",bidirectional"); end
+    if r.numLayers > 1; print(io, ",layers=", r.numLayers); end
+    if r.dropout > 0; print(io, ",dropout=", r.dropout); end
+    if r.inputMode == 1; print(io, ",skipinput"); end
+    if r.dataType != Float32; print(io, ',', r.dataType); end
+    print(io, ')')
+end
+
+@inline _getEmbed(input::Integer,embed::Nothing) = (nothing,input)
+@inline _getEmbed(input::Integer,embed::Embed) =
+    size(embed.weight,2) == input ? (embed,input) : error("dimension mismatch in embeddings")
+@inline _getEmbed(input::Integer,embed::Integer) = (Embed(input=input,output=embed),embed)
 
 gate_mappings(::Type{SRNN}) = Dict(:h=>(1,2))
 gate_mappings(::Type{GRU})  = Dict(:r=>(1,4),:u=>(2,5),:n=>(3,6))
@@ -121,35 +141,33 @@ gate_mappings(::Type{LSTM}) = Dict(:i=>(1,5),:f=>(2,6),:n=>(3,7),:o=>(4,8))
 const input_mappings = Dict(:i=>1,:h=>2)
 const param_mappings = Dict(:w=>1,:b=>2)
 
-@inline Base.show(io::IO, r::AbstractRNN{P,E}) where {P,E} = print(io,r.specs,"{params: ",P," embedding: ",E,"}")
+@inline gatesview(T::Type{<:AbstractRNN},r::RNN) =
+    Dict((Symbol(ty,ih,g,l,d),rnnparam(r, (r.direction+1)*(l-1)+d+1, id[ihid], param; useview=true))
+          for (l,d,(g,id),(ih,ihid),(ty,param)) in
+              product(1:r.numLayers,0:r.direction,gate_mappings(T),
+                      input_mappings,param_mappings))
 
-function gatesview(T::Type{<:AbstractRNN},r::RNN)
-    gatesview = Dict{Symbol,Any}()
-    for l in 1:r.numLayers, d in 0:r.direction
-        for (g,id) in gate_mappings(T)
-            for (ih,ihid) in input_mappings, (ty,param) in param_mappings
-                gatesview[Symbol(ty,ih,g,l,d)] = rnnparam(r, (r.direction+1)*(l-1)+d+1, id[ihid], param; useview=true)
-            end
-        end
-    end
-    return gatesview
-end
-
-function _ser(r::T, s::IdDict, m::typeof(Knet.JLDMODE)) where T <: AbstractRNN
+# Saves from unnecessary memory taken by gatesview
+@inline function _ser(r::AbstractRNN, s::IdDict, m::typeof(Knet.JLDMODE))
     if !haskey(s,r)
         if r.gatesview !== nothing
             s[r] = T(_ser(r.embedding,s,m), _ser(r.params,s,m), _ser(r.specs,s,m), nothing)
         else
             s[r] = T(_ser(r.embedding,s,m), _ser(r.params,s,m), _ser(r.specs,s,m), gatesview(T,s[r.specs]))
         end
-    end; return s[r]
+    end
+    return s[r]
 end
+
+#Base.show(io::IO, r::AbstractRNN{P,E}) where {P,E} = print(io,r.specs,"\ntypes:","{\nparams: ",P,"\nembedding: ",E,"\n}")
+
+
 ####
-#### Utils
+#### User Utils
 ####
 """
 
-    PadSequenceArray(batch::Vector{Vector{T}}) where T<:Integer
+    PadSequenceArray(batch::Vector{Vector{T}}; direction=:Right, pad=0) where T<:Integer
 
 Pads a batch of integer arrays with zeros
 
@@ -159,22 +177,33 @@ julia> PadSequenceArray([[1,2,3],[1,2],[1]])
  1  2  3
  1  2  0
  1  0  0
- ```
+
+ julia> PadSequenceArray([[1,2,3],[1,2],[1]], direction=:Left)
+ 3×3 Array{Int64,2}:
+  1  2  3
+  0  1  2
+  0  0  1
+```
 
 """
-function PadSequenceArray(batch::Vector{Vector{T}}; pad=0) where T<:Integer
+function PadSequenceArray(batch::Vector{Vector{T}}; direction=:Right, pad=0) where T<:Integer
     B      = length(batch)
     lngths = length.(batch)
     Tmax   = maximum(lngths)
     padded = Array{T}(undef,B,Tmax)
     @inbounds for n = 1:B
-        padded[n,1:lngths[n]] = batch[n]
-        padded[n,lngths[n]+1:end] .= pad
+        if direction == :Right
+            padded[n,1:lngths[n]] = batch[n]
+            padded[n,lngths[n]+1:end] .= pad
+        else direction == :Left
+            padded[n,1:end-lngths[n]] .= pad
+            padded[n,end-lngths[n]+1:end] = batch[n]
+        end
     end
     return padded
 end
 
-
+# FIXME: long
 """
 
     PadRNNOutput(s::RNNOutput)
@@ -182,8 +211,8 @@ Pads a rnn output if it is produces by unequal length batches
 `size(s.y)=(H/2H,sum_of_sequence_lengths)` becomes `(H/2H,B,Tmax)`
 
 """
+PadRNNOutput(s::RNNOutput{<:Any,<:Any,<:Any,Nothing}) = s,nothing
 function PadRNNOutput(s::RNNOutput)
-    s.indices == nothing && return s,nothing
     d = size(s.y,1)
     B = length(s.indices)
     lngths = length.(s.indices)
@@ -195,9 +224,8 @@ function PadRNNOutput(s::RNNOutput)
         df = Tmax-lngths[i]
         if df > 0
             mask[:,:,end-df+1:end] .= false
-            cpad = zeros(Float32,d*df) # zeros(Float32,2d,df)
-            kpad = atype(cpad)
-            ypad = reshape(cat1d(y1,kpad),d,Tmax) # hcat(y1,kpad)
+            pad = fill!(arrtype(undef,d*df),eltype(arrtype))
+            ypad = reshape(cat1d(y1,pad),d,Tmax) # hcat(y1,kpad)
             push!(cw,ypad)
         else
             push!(cw,y1)
@@ -206,6 +234,7 @@ function PadRNNOutput(s::RNNOutput)
     RNNOutput(reshape(vcat(cw...),d,B,Tmax),s.hidden,s.memory,nothing),mask
 end
 
+# FIXME: long
 function _pack_sequence(batch::Vector{Vector{T}}) where T<:Integer
     tokens = Int[]
     bsizes = Int[]
@@ -224,37 +253,36 @@ function _pack_sequence(batch::Vector{Vector{T}}) where T<:Integer
     return tokens,bsizes
 end
 
-@inline function _batchSizes2indices(batchSizes)
-        return map(1:batchSizes[1]) do i
-            @inbounds [i;i.+cumsum(filter(x->(x>=i),batchSizes)[1:end-1])]
-        end
-end
+@inline _batchSizes2indices(batchSizes) =
+    map(1:batchSizes[1]) do i
+        @inbounds [i;i.+cumsum(filter(x->(x>=i),batchSizes)[1:end-1])]
+    end
 
-@inline _getEmbed(input::Int,embed::Nothing) = (nothing,input)
-@inline _getEmbed(input::Int,embed::Embed)   = size(embed.w,2) == input ? (embed,input) : error("dimension mismatch in your embedding")
-@inline _getEmbed(input::Int,embed::Integer) = (Embed(input=input,output=embed),embed)
+# FIXME: long
+@inline function _forw(rnn::AbstractRNN{<:Any,<:Embed},batch::Vector{Vector{T}},h...;
+               sorted=issorted(batch,by=length),o...) where T<:Integer
 
-function _forw(rnn::AbstractRNN{<:Any,<:Embed},batch::Vector{Vector{T}},h...;sorted=true,o...) where T<:Integer
     if all(length.(batch).==length(batch[1]))
         return _forw(rnn,permutedims(cat(batch...;dims=2),(2,1)),h...;o...)
     end
+
     if !sorted
-        v   = sortperm(batch; by=length, rev=true, alg=MergeSort)
-        rev = sortperm(v; alg=MergeSort)
-        batch= batch[v]
+        v     = sortperm(batch; by=length, rev=true, alg=MergeSort)
+        batch = batch[v]
     end
-    tokens,bsizes = _pack_sequence(batch)
-    y,hidden,memory,_  = _forw(rnn,tokens,h...;batchSizes=bsizes,o...)
-    inds    = _batchSizes2indices(bsizes);
+
+    tokens, bsizes = _pack_sequence(batch)
+    inds = _batchSizes2indices(bsizes)
+    y,hidden,memory,_ = _forw(rnn,tokens,h...;batchSizes=bsizes,o...)
+
     if !sorted
-        inds=inds[rev];
-        hidden!=nothing && (hidden=_sort3D(hidden,rev))
-        memory!=nothing && (memory=_sort3D(memory,rev))
+        rev  = invperm(v)
+        return y,_sort3D(hidden,rev),_sort3D(memory,rev),inds[rev]
     end
-    y,hidden,memory,inds
+    return y,hidden,memory,inds
 end
 
-@inline function _forw(specs::Knet.RNN,params,x,h...;o...)
+@inline function _forw(specs::RNN,params,x,h...;o...)
     y,hidden,memory,_ = rnnforw(specs,params,x,h...;o...)
     return y,hidden,memory,nothing
 end
@@ -273,6 +301,7 @@ end
 @inline _forw(rnn::AbstractRNN{<:Any,<:Nothing}, seq::Array{T},h...;o...) where T<:Integer =
     error("Integer inputs can only be used with RNNs that has embeddings.")
 
-@inline _sort3D(hidden::Array,inds) = hidden[:,inds,:]
+@inline _sort3D(hidden::Nothing,inds) = nothing
+@inline _sort3D(hidden::AbstractArray,inds) = hidden[:,inds,:]
 @inline _sort3D(h::KnetArray,inds)  =
     reshape(cat1d(map(i->h[:,:,i][:,inds],1:size(h,3))...),size(h))
