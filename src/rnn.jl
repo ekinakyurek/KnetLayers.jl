@@ -96,11 +96,11 @@ for layer in (:SRNN, :LSTM, :GRU)
     layername=string(layer)
     @eval begin
 
-        mutable struct $layer{P,E<:LayerOrNothing,G<:DictOrNothing} <: AbstractRNN{P,E}
+        mutable struct $layer{P,E<:LayerOrNothing} <: AbstractRNN{P,E}
             embedding::E
             params::P
             specs::RNN
-            gatesview::G
+            gatesview::DictOrNothing
         end
 
         @inline (m::$layer)(x,h...;o...) = RNNOutput(_forw(m,x,h...;o...)...)
@@ -136,9 +136,9 @@ end
     size(embed.weight,2) == input ? (embed,input) : error("dimension mismatch in embeddings")
 @inline _getEmbed(input::Integer,embed::Integer) = (Embed(input=input,output=embed),embed)
 
-gate_mappings(::Type{SRNN}) = Dict(:h=>(1,2))
-gate_mappings(::Type{GRU})  = Dict(:r=>(1,4),:u=>(2,5),:n=>(3,6))
-gate_mappings(::Type{LSTM}) = Dict(:i=>(1,5),:f=>(2,6),:n=>(3,7),:o=>(4,8))
+gate_mappings(::Type{<:SRNN}) = Dict(:h=>(1,2))
+gate_mappings(::Type{<:GRU})  = Dict(:r=>(1,4),:u=>(2,5),:n=>(3,6))
+gate_mappings(::Type{<:LSTM}) = Dict(:i=>(1,5),:f=>(2,6),:n=>(3,7),:o=>(4,8))
 const input_mappings = Dict(:i=>1,:h=>2)
 const param_mappings = Dict(:w=>1,:b=>2)
 
