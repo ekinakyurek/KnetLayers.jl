@@ -149,7 +149,7 @@ gatesview(T::Type{<:AbstractRNN},r::RNN) =
                       input_mappings,param_mappings))
 
 # Saves from unnecessary memory taken by gatesview
-function _ser(r::T, s::IdDict, m::typeof(Knet.JLDMODE)) T <: AbstractRNN
+function _ser(r::T, s::IdDict, m::typeof(Knet.JLDMODE)) where T <: AbstractRNN
     if !haskey(s,r)
         if r.gatesview !== nothing
             s[r] = T(_ser(r.embedding,s,m), _ser(r.params,s,m), _ser(r.specs,s,m), nothing)
