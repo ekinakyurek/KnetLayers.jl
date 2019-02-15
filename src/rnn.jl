@@ -30,8 +30,9 @@ struct RNNOutput{T,V,Z,S<:VVecOrNothing}
     memory::Z
     indices::S
 end
+
 function Base.show(io::IO,R::RNNOutput{T,V,Z,S}) where {T,V,Z,S}
-    print(io,"RNNOutput(y: $T $(size(R.y))")
+    print(io,"RNNOutput(y: $T$(size(R.y))")
     V !== Nothing && print(io,", hidden : $V$(size(R.hidden))")
     Z !== Nothing && print(io,", memory : $Z$(size(R.memory))")
     S !== Nothing && print(io,", indices: $S$(size(R.indices))")
@@ -148,7 +149,7 @@ gatesview(T::Type{<:AbstractRNN},r::RNN) =
                       input_mappings,param_mappings))
 
 # Saves from unnecessary memory taken by gatesview
-function _ser(r::AbstractRNN, s::IdDict, m::typeof(Knet.JLDMODE))
+function _ser(r::T, s::IdDict, m::typeof(Knet.JLDMODE)) T <: AbstractRNN
     if !haskey(s,r)
         if r.gatesview !== nothing
             s[r] = T(_ser(r.embedding,s,m), _ser(r.params,s,m), _ser(r.specs,s,m), nothing)
@@ -158,9 +159,6 @@ function _ser(r::AbstractRNN, s::IdDict, m::typeof(Knet.JLDMODE))
     end
     return s[r]
 end
-
-#Base.show(io::IO, r::AbstractRNN{P,E}) where {P,E} = print(io,r.specs,"\ntypes:","{\nparams: ",P,"\nembedding: ",E,"\n}")
-
 
 ####
 #### User Utils
