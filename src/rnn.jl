@@ -141,14 +141,14 @@ gate_mappings(::Type{LSTM}) = Dict(:i=>(1,5),:f=>(2,6),:n=>(3,7),:o=>(4,8))
 const input_mappings = Dict(:i=>1,:h=>2)
 const param_mappings = Dict(:w=>1,:b=>2)
 
-@inline gatesview(T::Type{<:AbstractRNN},r::RNN) =
+gatesview(T::Type{<:AbstractRNN},r::RNN) =
     Dict((Symbol(ty,ih,g,l,d),rnnparam(r, (r.direction+1)*(l-1)+d+1, id[ihid], param; useview=true))
           for (l,d,(g,id),(ih,ihid),(ty,param)) in
               product(1:r.numLayers,0:r.direction,gate_mappings(T),
                       input_mappings,param_mappings))
 
 # Saves from unnecessary memory taken by gatesview
-@inline function _ser(r::AbstractRNN, s::IdDict, m::typeof(Knet.JLDMODE))
+function _ser(r::AbstractRNN, s::IdDict, m::typeof(Knet.JLDMODE))
     if !haskey(s,r)
         if r.gatesview !== nothing
             s[r] = T(_ser(r.embedding,s,m), _ser(r.params,s,m), _ser(r.specs,s,m), nothing)
@@ -186,7 +186,7 @@ julia> PadSequenceArray([[1,2,3],[1,2],[1]])
 ```
 
 """
-function PadSequenceArray(batch::Vector{Vector{T}}; direction=:Right, pad=0) where T<:Integer
+@inline function PadSequenceArray(batch::Vector{Vector{T}}; direction=:Right, pad=0) where T<:Integer
     B      = length(batch)
     lngths = length.(batch)
     Tmax   = maximum(lngths)
@@ -211,8 +211,8 @@ Pads a rnn output if it is produces by unequal length batches
 `size(s.y)=(H/2H,sum_of_sequence_lengths)` becomes `(H/2H,B,Tmax)`
 
 """
-PadRNNOutput(s::RNNOutput{<:Any,<:Any,<:Any,Nothing}) = s,nothing
-function PadRNNOutput(s::RNNOutput)
+@inline PadRNNOutput(s::RNNOutput{<:Any,<:Any,<:Any,Nothing}) = s,nothing
+@inline function PadRNNOutput(s::RNNOutput)
     d = size(s.y,1)
     B = length(s.indices)
     lngths = length.(s.indices)
@@ -235,7 +235,7 @@ function PadRNNOutput(s::RNNOutput)
 end
 
 # FIXME: long
-function _pack_sequence(batch::Vector{Vector{T}}) where T<:Integer
+@inline function _pack_sequence(batch::Vector{Vector{T}}) where T<:Integer
     tokens = Int[]
     bsizes = Int[]
     B      = length(batch)

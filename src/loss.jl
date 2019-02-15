@@ -41,7 +41,7 @@ struct LogisticLoss <: Loss end
 ####
 #### Utils
 ####
-function nllmask(y,a::AbstractArray{<:Integer}; dims=1, average=true)
+@inline function nllmask(y,a::AbstractArray{<:Integer}; dims=1, average=true)
     indices = findindices(y, a, dims=dims)
     lp = logp(y,dims=dims)[indices]
     average ? -mean(lp) : -sum(lp)
