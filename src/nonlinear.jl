@@ -1,4 +1,13 @@
 """
+    NonAct()
+    (l::NonAct)(x) = x
+
+Identity activation does nothing
+"""
+struct NonAct <: Activation end
+@inline (l::NonAct)(x) = x
+
+"""
     ReLU()
     (l::ReLU)(x) = max(0,x)
 
@@ -43,7 +52,7 @@ mutable struct LeakyReLU <: Activation
     α::AbstractFloat
     LeakyReLU(alpha::AbstractFloat=0.2) = new(alpha)
 end
-@inline (l::LeakyReLU)(x) = relu.(x) .+ l.α*min.(0,x)
+@inline (l::LeakyReLU)(x) = relu.(x) .+ l.α*min.(0,x) # relu.(x) .+ l.α*relu.(-x) ?
 
 """
     Dropout(p=0)
@@ -63,7 +72,7 @@ Dropout(;p=0) = Dropout(p)
 Treat entries in x as as unnormalized log probabilities and return normalized log probabilities.
 
 dims is an optional argument, if not specified the normalization is over the whole x, otherwise the normalization is performed over the given dimensions. In
-particular, if x is a matrix, dims=1 normalizes columns of x and dims=2 normalizes rows of x.
+particular, if x is a matrix, dims=1 normalizes columns of x, dims=2 normalizes rows of x.
 """
 struct LogSoftMax <: Activation
     dims::Union{Integer,Colon}
@@ -78,7 +87,7 @@ LogSoftMax(;dims=:) = LogSoftMax(dims)
 Treat entries in x as as unnormalized scores and return softmax probabilities.
 
 dims is an optional argument, if not specified the normalization is over the whole x, otherwise the normalization is performed over the given dimensions. In
-particular, if x is a matrix, dims=1 normalizes columns of x and dims=2 normalizes rows of x.
+particular, if x is a matrix, dims=1 normalizes columns of x, dims=2 normalizes rows of x.
 """
 struct SoftMax <: Activation
     dims::Union{Integer,Colon}
@@ -93,7 +102,7 @@ SoftMax(;dims=:) = SoftMax(dims)
   Compute log(sum(exp(x);dims)) in a numerically stable manner.
 
   dims is an optional argument, if not specified the summation is over the whole x, otherwise the summation is performed over the given dimensions. In particular if x
-  is a matrix, dims=1 sums columns of x and dims=2 sums rows of x.
+  is a matrix, dims=1 sums the columns of x, dims=2 sums the rows of x.
 """
 struct LogSumExp <: Activation
     dims::Union{Integer,Colon}

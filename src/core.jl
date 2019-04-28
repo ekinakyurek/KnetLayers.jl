@@ -1,6 +1,3 @@
-# TODO :
-#   - design optimizer functionality
-
 
 abstract type Layer end
 
