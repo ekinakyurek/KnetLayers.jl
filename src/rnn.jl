@@ -11,13 +11,13 @@ import Base.Iterators: product
         indices
     end
 
-Outputs of the RNN models are always `RNNOutput`
-`hidden`,`memory` and `indices` may be nothing depending on the kwargs you used in forward.
+RNN layer outputs are always `RNNOutput`
+`hidden`,`memory` and `indices` may be nothing depending on the keyword arguments you used in forward.
 
 `y` is last hidden states of each layer. `size(y)=(H/2H,[B,T])`.
 If you use unequal length instances in a batch input, `y` becomes 2D array `size(y)=(H/2H,sum_of_sequence_lengths)`.
-See `indices` and `PadRNNOutput` to get correct time outputs for a specific instance or to pad whole output.
-
+See `indices` below to get correct time outputs for a specific instance or
+see  `PadRNNOutput` to pad whole output.
 `h` is the hidden states in each timesstep. `size(h) = h,B,L/2L`
 
 `c` is the hidden states in each timesstep. `size(h) = h,B,L/2L`
@@ -53,20 +53,20 @@ end
 
 All RNN layers has above forward run(1,2,3) functionalities.
 
-(1) `x` is an input array with size equals d,[B,T]
+(1) `x` is an AbstractArray{T,N} with size equals d,[B,T]
 
-(2) For this You need to have an RNN with embedding layer.
-`x` is an integer array and inputs coressponds one hot vector indices.
-You can give 2D array for minibatching as rows corresponds to one instance.
-You can give 1D array with minibatching by specifying batch batchSizes argument.
-Checkout `Knet.rnnforw` for this.
+(2) For this, an RNN with embedding layer is needed. see `embed` option below.
+`x` is an integer array and inputs corresponds one-hot indices.
+One can give 2D array for minibatching as rows corresponds to one instance, or
+One can give 1D array with minibatching by specifying batch batchSizes argument.
+see `Knet.rnnforw` for the details of batchSizes.
 
-(3) For this You need to have an RNN with embedding layer.
+(3) For this, RNN with embedding layer is needed.
 `x` is an vector of integer vectors. Every integer vector corresponds to an
-instance. It automatically batches inputs. It is better to give inputs as sorted.
+instance. It automatically batches inputs for the user. It is better to give inputs as sorted.
 If your inputs sorted you can make `sorted` argument true to increase performance.
 
-see RNNOutput
+see `RNNOutput` for output details
 
 # options
 
@@ -169,7 +169,7 @@ end
 
 Pads a batch of integer arrays with zeros
 
-```
+```julia
 julia> PadSequenceArray([[1,2,3],[1,2],[1]])
 3×3 Array{Int64,2}:
  1  2  3
@@ -184,7 +184,7 @@ julia> PadSequenceArray([[1,2,3],[1,2],[1]])
 ```
 
 """
-@inline function PadSequenceArray(batch::Vector{Vector{T}}; direction=:Right, pad=0) where T<:Integer
+function PadSequenceArray(batch::Vector{Vector{T}}; direction=:Right, pad=0) where T<:Integer
     B      = length(batch)
     lngths = length.(batch)
     Tmax   = maximum(lngths)
@@ -203,14 +203,13 @@ end
 
 # FIXME: long
 """
-
     PadRNNOutput(s::RNNOutput)
-Pads a rnn output if it is produces by unequal length batches
+Pads a RNNOutput if it is produced by unequal length batches
 `size(s.y)=(H/2H,sum_of_sequence_lengths)` becomes `(H/2H,B,Tmax)`
-
 """
 @inline PadRNNOutput(s::RNNOutput{<:Any,<:Any,<:Any,Nothing}) = s,nothing
-@inline function PadRNNOutput(s::RNNOutput)
+
+function PadRNNOutput(s::RNNOutput)
     d = size(s.y,1)
     B = length(s.indices)
     lngths = length.(s.indices)
@@ -232,32 +231,54 @@ Pads a rnn output if it is produces by unequal length batches
     RNNOutput(reshape(vcat(cw...),d,B,Tmax),s.hidden,s.memory,nothing),mask
 end
 
-# FIXME: long
-@inline function _pack_sequence(batch::Vector{Vector{T}}) where T<:Integer
-    tokens = Int[]
-    bsizes = Int[]
+"""
+    _pack_sequence(batch::Vector{Vector{T}}) where T<:Integer
+
+Packs unequal length of sequence batches for cuDNN format.
+It return a tuple of tokens and batchSizes.
+`tokens` consists of all input tokens in the order of cuDNN format. So, length(tokens) == sum(length,batch)
+`batchSizes` keeps the information of how many instance available for a time sequence. So, lengh(bathSizes) = maximum(length,batch)
+
+#Example
+```julia
+julia> _pack_sequence([[1,2,3,4],[7,6],[8,5],[9,10]])
+(tokens = [1, 7, 8, 9, 2, 6, 5, 10, 3, 4], batchSizes = [4, 4, 1, 1])
+```
+"""
+function _pack_sequence(batch::Vector{Vector{T}}) where T<:Integer
     B      = length(batch)
     Lmax   = length(first(batch))
+    tokens = zeros(Int,sum(length,batch))
+    bsizes = zeros(Int,Lmax)
+    i = 1
     @inbounds for t = 1:Lmax
         bs = 0
         @inbounds for k = 1:B
             if t<=length(batch[k])
-                push!(tokens,batch[k][t])
+                tokens[i] = batch[k][t]
                 bs += 1
+                i  += 1
             end
         end
-        push!(bsizes,bs)
+        bsizes[t] = bs
     end
-    return tokens,bsizes
+    return (tokens=tokens,batchSizes=bsizes)
 end
 
+"""
+    _batchSizes2indices(batchSizes::Vector{<:Integer})
+
+
+    Finds the indices of the `tokens` belongs to for each instance.
+    see `_pack_sequence` for details
+"""
 @inline _batchSizes2indices(batchSizes) =
     map(1:batchSizes[1]) do i
         @inbounds [i;i.+cumsum(filter(x->(x>=i),batchSizes)[1:end-1])]
     end
 
 # FIXME: long
-@inline function _forw(rnn::AbstractRNN{<:Any,<:Embed},batch::Vector{Vector{T}},h...;
+function _forw(rnn::AbstractRNN{<:Any,<:Embed},batch::Vector{Vector{T}},h...;
                sorted=issorted(batch,by=length),o...) where T<:Integer
 
     if all(length.(batch).==length(batch[1]))

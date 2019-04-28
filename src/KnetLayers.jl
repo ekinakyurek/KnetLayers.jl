@@ -28,19 +28,34 @@ dir(path...) = joinpath(dirname(@__DIR__),path...)
 seed! = Knet.seed!
 #Setters for atype
 arrtype = Array{Float32}
+
+"""
+    Used for setting default underlying array type for layer parameters.
+
+    settype!(t::T) where T<:Type{KnetArray{V}} where V <: AbstractFloat = gpu()>=0 ? (global arrtype=t) : error("No GPU available")
+    settype!(t::T) where T<:Type{Array{V}} where V <: AbstractFloat = (global arrtype=t)
+    settype!(t::Union{Type{KnetArray},Type{Array}}) = settype!(t{Float32})
+
+# Example
+```julia
+julia> KnetLayers.settype!(KnetArray) # on a GPU machine
+KnetArray{Float32}
+```
+"""
 settype!(t::T) where T<:Type{KnetArray{V}} where V <: AbstractFloat = gpu()>=0 ? (global arrtype=t) : error("No GPU available")
 settype!(t::T) where T<:Type{Array{V}} where V <: AbstractFloat = (global arrtype=t)
 settype!(t::Union{Type{KnetArray},Type{Array}}) = settype!(t{Float32})
 
 include("core.jl");
 include("primitive.jl");   export Bias, Multiply, Embed, Linear, Dense, BatchNorm
-include("nonlinear.jl");   export ReLU,Sigm,Tanh,LeakyReLU,ELU,Dropout,LogSoftMax,SoftMax,LogSumExp
-include("loss.jl");        export CrossEntropyLoss, BCELoss, LogisticLoss
+include("nonlinear.jl");   export NonAct, ReLU,Sigm,Tanh,LeakyReLU,ELU,Dropout,LogSoftMax,SoftMax,LogSumExp
+include("loss.jl");        export CrossEntropyLoss, BCELoss, LogisticLoss, SigmoidCrossEntropyLoss
 include("cnn.jl");         export Pool,UnPool,DeConv,Conv
 include("special.jl");     export MLP
 include("rnn.jl");         export RNN,SRNN,LSTM,GRU,RNNOutput,PadRNNOutput,PadSequenceArray
 include("chain.jl");       export Chain
 include("../data/IndexedDict.jl");
+include("../data/one_hot.jl");
 
 
 function __init__()

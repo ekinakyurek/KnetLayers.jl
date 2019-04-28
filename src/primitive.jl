@@ -2,16 +2,22 @@
     Multiply(input=inputDimension, output=outputDimension, winit=xavier, atype=KnetLayers.arrtype)
 
 Creates a matrix multiplication layer based on `inputDimension` and `outputDimension`.
-    (m::Multiply) = m.w * x
+    (m::Multiply)(x::AbstractArray{T,N}; keepsize=true)= m.w * x
 
 By default parameters initialized with xavier, you may change it with `winit` argument.
 
 # Keywords
-* `input=inputDimension`: input dimension
-* `output=outputDimension`: output dimension
+* `input=inputDimension`: input size
+* `output=outputDimension`: output size
 * `winit=xavier`: weight initialization distribution
-* `atype=KnetLayers.arrtype` : array type for parameters.
-   Default value is KnetArray{Float32} if you have gpu device. Otherwise it is Array{Float32}
+* `atype=KnetLayers.arrtype` : underlying array type for parameters.
+   Default arrtype=KnetArray{Float32} if running on a GPU device, otherwise Array{Float32}.
+   see `KnetLayers.settype!`
+* `keepsize=true`: When `N=3` or higher dimensional arrays supplied, `Multiply` squeezes the
+                   dimensions except the first dimension in order to perform multiplication.
+                   It reshapes the output to recover input sizeality `N`.
+                   However, one may obtain 2D vesion by setting keepsize=false
+
 """
 mutable struct Multiply{P} <: Layer
     weight::P
@@ -32,72 +38,96 @@ end
 Base.show(io::IO,m::Multiply{P}) where P = print(io,Multiply{P},"(input=",size(m.weight,2)," output=",size(m.weight,1),")")
 """
     Embed(input=inputSize, output=embedSize, winit=xavier, atype=KnetLayers.arrtype)
-Creates an embedding layer according to given `inputSize` and `embedSize` where `inputSize` is your number of unique items you want to embed, and `embedSize` is the size of output vectors.
-By default parameters initialized with xavier, you yam change it with `winit` argument.
+Creates an embedding layer according to given `inputSize` and `embedSize`.
+By default parameters initialized with xavier, change it with `winit` argument.
 
     (m::Embed)(x::Array{T}) where T<:Integer
-    (m::Embed)(x; keepsize=true)
+    (m::Embed)(x::AbstractArray{T,N}; keepsize=true) # see `Multiply`
 
 
 Embed objects are callable with an input which is either and integer array
-(one hot encoding) or an N-dimensional matrix. For N-dimensional matrix,
-`size(x,1)==inputSize`
+(one hot encoding) or an AbstractArray{T,N}
+For N-dimensional array, `size(x,1)==inputSize`, see `Multiply`
 
 # Keywords
 
-* `input=inputDimension`: input dimension
-* `output=embeddingDimension`: output dimension
+* `input=inputDimension`: input size
+* `output=embeddingDimension`: output size
 * `winit=xavier`: weight initialization distribution
-* `atype=KnetLayers.arrtype` : array type for parameters.
-   Default value is KnetArray{Float32} if you have gpu device. Otherwise it is Array{Float32}
-
+* `atype=KnetLayers.arrtype` : underlying array type for parameters.
+   Default arrtype=KnetArray{Float32} if running on a GPU device, otherwise Array{Float32}.
+   see `KnetLayers.settype!`
 """
 const Embed = Multiply
 
+"""
+    Bias(sizes..., atype=KnetLayers.arrtype, winit=zeros)
+Creates a bias layer according to given `sizes`
+By default parameters initialized with zeros, change it with `winit` argument.
+`Bias` layer can be initialized with Bias(nothing) to make it ineffective.
+
+    (m::Bias)(x) = m.b .+ x
+    (m::Bias{Nothing})(x) = x
+# Keywords
+
+* `winit=zeros`: weight initialization distribution
+* `atype=KnetLayers.arrtype` : underlying array type for parameters.
+   Default arrtype=KnetArray{Float32} if running on a GPU device, otherwise Array{Float32}.
+   see `KnetLayers.settype!`
+"""
 struct Bias{T}
     b::T
 end
 @inline (m::Bias)(x) = m.b .+ x
 @inline (m::Bias{Nothing})(x) = x
-Bias(sizes...;atype=arrtype,o...) = Bias(param(sizes...;atype=atype, o...))
+#Bias(size::Int;atype=arrtype, winit=zeros, o...) = Bias(param(size;atype=atype, init=winit,o...))
+Bias(sizes::Int...;atype=arrtype, winit=zeros, o...) = Bias(param(sizes...;atype=atype, init=winit, o...))
 Bias() = Bias(nothing)
 Base.show(io::IO,m::Bias{T}) where T = print(io,Bias{T},"(length=",length(m.b),")")
+
 """
     Linear(input=inputSize, output=outputSize, winit=xavier, binit=zeros, atype=KnetLayers.arrtype)
 
 Creates and linear layer according to given `inputSize` and `outputSize`.
+`Linear` consists of a `Multiply` and a `Bias` layer.
+
+    (m::Linear)(x) = m.bias(m.mult(x))
 
 # Keywords
-* `input=inputSize`   input dimension
-* `output=outputSize` output dimension
+* `input=inputSize`   input size
+* `output=outputSize` output size
 * `winit=xavier`: weight initialization distribution
-* `bias=zeros`: bias initialization distribution
-* `atype=KnetLayers.arrtype` : array type for parameters.
-   Default value is KnetArray{Float32} if you have gpu device. Otherwise it is Array{Float32}
+* `bias=zeros`: bias initialization distribution. It can be `nothing` for unbiased `Linear` layer.
+* `atype=KnetLayers.arrtype` : underlying array type for parameters.
+   Default arrtype=KnetArray{Float32} if running on a GPU device, otherwise Array{Float32}.
+   see `KnetLayers.settype!`
 """
 mutable struct Linear <: Layer
     mult::Multiply
     bias::Bias
 end
 function Linear(;input::Int, output::Int, winit=xavier, binit=zeros, atype=arrtype)
-    Linear(Multiply(input=input, output=output, winit=winit, atype=atype),Bias(output, init=binit, atype=atype))
+    Linear(Multiply(input=input, output=output, winit=winit, atype=atype),Bias(output, winit=binit, atype=atype))
 end
 @inline (m::Linear)(x) = m.bias(m.mult(x))
 
-#Base.show(io::IO,m::Linear) = print(io,Linear,"(",m.mult,")")
 """
     Dense(input=inputSize, output=outputSize, activation=ReLU(), winit=xavier, binit=zeros, atype=KnetLayers.arrtype)
+Creates a dense layer according to given `input` and `output` sizes.
+If activation is `nothing`, it acts like a `Linear` Layer. see `Linear`
 
-Creates and deense layer according to given `input=inputSize` and `output=outputSize`.
-If activation is `nothing`, it acts like a `Linear` Layer.
+    (m::Dense{Nothing})(x) = m.linear(x)
+    (m::Dense{<:Activation})(x)= m.activation(m.linear(x))
+
 # Keywords
-* `input=inputSize`   input dimension
-* `output=outputSize` output dimension
+* `input=inputSize`   input size
+* `output=outputSize` output size
 * `winit=xaiver`: weight initialization distribution
 * `bias=zeros`:   bias initialization distribution
-* `activation=ReLU()`  activation function(it does not broadcast) or an  activation layer
-* `atype=KnetLayers.arrtype` : array type for parameters.
-   Default value is KnetArray{Float32} if you have gpu device. Otherwise it is Array{Float32}
+* `activation=ReLU()`  an  activation layer, or nothing for a `Linear` equivalent layer.
+* `atype=KnetLayers.arrtype` : underlying array type for parameters.
+   Default arrtype=KnetArray{Float32} if running on a GPU device, otherwise Array{Float32}.
+   see `KnetLayers.settype!`
 """
 mutable struct Dense{T<:ActOrNothing} <: Layer
     linear::Linear
@@ -123,11 +153,10 @@ Base.show(io::IO, x::Dense) = print(io,typeof(x),"(",x.linear,")")
  (1-momentum).
 * `mean=nothing': The running mean.
 * `var=nothing`: The running variance.
-* `meaninit=zeros`: The function used for initialize the running mean. Should either be `nothing` or
-of the form `(eltype, dims...)->data`. `zeros` is a good option.
-* `varinit=ones`: The function used for initialize the run
-* `dataType=eltype(KnetLayers.arrtype)` : element type ∈ {Float32,Float64} for parameters. Default value is `eltype(KnetLayers.arrtype)`
-* `usegpu=KnetLayers.arrtype <: KnetArray` :
+* `meaninit=zeros`: The function used for initialize the running mean.
+* `varinit=ones`: The function used for initialize the running variance of batchnorm
+* `dataType=eltype(KnetLayers.arrtype)` : element type ∈ {Float32,Float64} for parameters.
+* `usegpu=KnetLayers.arrtype <: KnetArray`
 # Keywords
 * `training`=nothing: When training is true, the mean and variance of x are used and moments
  argument is modified if it is provided. When training is false, mean and variance
