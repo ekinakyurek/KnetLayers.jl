@@ -163,12 +163,12 @@ Base.show(io::IO, x::Dense) = print(io,typeof(x),"(",x.linear,")")
  stored in the moments argument are used. Default value is true when at least one
  of x and params is AutoGrad.Value, false otherwise.
 """
-mutable struct BatchNorm{P} <: Layer
-    params::P
+mutable struct BatchNorm <: Layer
+    params
     moments::BNMoments
 end
 
-function BatchNorm(channels::Int; usegpu = arrtype <: KnetArray, dataType=eltype(arrtype), o...)
+function BatchNorm(channels::Int;  usegpu = arrtype <: KnetArray, dataType=eltype(arrtype), o...)
     w = bnparams(dataType,channels)
     m = bnmoments(;o...)
     p = usegpu ? Param(KnetArray(w)) : Param(w)

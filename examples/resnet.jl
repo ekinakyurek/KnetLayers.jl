@@ -1,6 +1,33 @@
+using Knet, KnetLayers, BSON, ImageMagick, Images
+
+"""
+ResNet Model
+Currently only pre-trained ResNet50 weights available.
+
+```julia
+
+  julia> include(KnetLayers.dir("examples","resnet.jl"))
+  trained_resnet50_layers (generic function with 2 methods)
+
+  julia> model = trained(ResNet{50})
+  ResNet{50}()
+
+  julia> topK(model.labels, model("/Users/ekin/Downloads/gray-wolf_sam-parks.png");K=5)
+  5-element Array{String,1}:
+   "timber wolf, grey wolf, gray wolf, Canis lupus"
+   "white wolf, Arctic wolf, Canis lupus tundrarum"
+   "Eskimo dog, husky"
+   "coyote, prairie wolf, brush wolf, Canis latrans"
+   "red wolf, maned wolf, Canis rufus, Canis niger"
+```
+"""
+struct ResNet{N}
+  layers::Chain
+  labels::Array{String}
+end
 #model url: https://github.com/FluxML/Metalhead.jl/releases/download/v0.1.1/resnet.bson
 #reference: https://github.com/FluxML/Metalhead.jl
-using Knet, KnetLayers, BSON, ImageMagick, Images
+
 
 struct ResidualBlock
   layers
@@ -82,27 +109,8 @@ resnet_configs = Dict(18 => (BasicBlock, [2, 2, 2, 2]),
                       101 => (Bottleneck, [3, 4, 23, 3]),
                       152 => (Bottleneck, [3, 8, 36, 3]))
 
-"""
-    ResNet  Model
-    Currently only pre-trained ResNet50 weights available.
 
-    #Example
-    ```julia
-      julia> model = trained(ResNet{50})
 
-      julia> topK(model.labels, model("cat.jpg");K=5) # assuming an example image exists
-      5-element Array{String,1}:
-       "tabby, tabby cat"
-       "paper towel"
-       "mask"
-       "Egyptian cat"
-       "plastic bag"
-    ```
-"""
-struct ResNet{N}
-  layers::Chain
-  labels::Array{String}
-end
 
 (m::ResNet)(x) = m.layers(x)
 (m::ResNet)(x::Union{AbstractMatrix,AbstractString}) where {T,N} = m.layers(preprocess(x))
@@ -161,6 +169,12 @@ function center_crop(im, len)
   return im[div(end,2)-l2:div(end,2)+l2-adjust,div(end,2)-l2:div(end,2)+l2-adjust]
 end
 
+function loadBNLayer!(m::BatchNorm, var, mean, scale, bias)
+  m.moments.var  = var  |> to4D
+  m.moments.mean = mean |> to4D
+  m.params       = vcat(scale,bias) |> toArrType
+end
+
 function trained_resnet50_layers(model=KnetLayers.dir("examples","resnet.bson"))
     if !isfile(model)
         download("https://github.com/FluxML/Metalhead.jl/releases/download/v0.1.1/resnet.bson",model)
@@ -171,33 +185,46 @@ function trained_resnet50_layers(model=KnetLayers.dir("examples","resnet.bson"))
     for ele in keys(weight)
         weights[string(ele)] = weight[ele]
     end
-    ls = load_resnet(resnet_configs[50]...)
-    transfer!(ls[1][1].weight, weights["gpu_0/conv1_w_0"])
-    ls[1][2].moments.var =  weights["gpu_0/res_conv1_bn_riv_0"] |> to4D
-    ls[1][2].moments.mean = weights["gpu_0/res_conv1_bn_rm_0"] |> to4D
 
-    ls[1][2].params .= vcat(weights["gpu_0/res_conv1_bn_s_0"],weights["gpu_0/res_conv1_bn_b_0"])
+    ls = load_resnet(resnet_configs[50]...)
+
+    transfer!(ls[1][1].weight, weights["gpu_0/conv1_w_0"])
+    loadBNLayer!(ls[1][2],weights["gpu_0/res_conv1_bn_riv_0"],
+                          weights["gpu_0/res_conv1_bn_rm_0"],
+                          weights["gpu_0/res_conv1_bn_s_0"],
+                          weights["gpu_0/res_conv1_bn_b_0"])
+
     count = 2
 
     for j in [3:5, 6:9, 10:15, 16:18]
         for p in j
             transfer!(ls[p].layers[1].weight, weights["gpu_0/res$(count)_$(p-j[1])_branch2a_w_0"])
-            ls[p].layers[2][1].moments.var = weights["gpu_0/res$(count)_$(p-j[1])_branch2a_bn_riv_0"] |> to4D
-            ls[p].layers[2][1].moments.mean = weights["gpu_0/res$(count)_$(p-j[1])_branch2a_bn_rm_0"] |> to4D
-            ls[p].layers[2][1].params .=  vcat(weights["gpu_0/res$(count)_$(p-j[1])_branch2a_bn_s_0"],weights["gpu_0/res$(count)_$(p-j[1])_branch2a_bn_b_0"]) |> toArrType
+
+            loadBNLayer!(ls[p].layers[2][1], weights["gpu_0/res$(count)_$(p-j[1])_branch2a_bn_riv_0"],
+                                             weights["gpu_0/res$(count)_$(p-j[1])_branch2a_bn_rm_0"],
+                                             weights["gpu_0/res$(count)_$(p-j[1])_branch2a_bn_s_0"],
+                                             weights["gpu_0/res$(count)_$(p-j[1])_branch2a_bn_b_0"])
+
             transfer!(ls[p].layers[3].weight , weights["gpu_0/res$(count)_$(p-j[1])_branch2b_w_0"])
-            ls[p].layers[4][1].moments.var = weights["gpu_0/res$(count)_$(p-j[1])_branch2b_bn_riv_0"] |> to4D
-            ls[p].layers[4][1].moments.mean = weights["gpu_0/res$(count)_$(p-j[1])_branch2b_bn_rm_0"] |> to4D
-            ls[p].layers[4][1].params .=  vcat(weights["gpu_0/res$(count)_$(p-j[1])_branch2b_bn_s_0"],weights["gpu_0/res$(count)_$(p-j[1])_branch2b_bn_b_0"]) |> toArrType
+
+            loadBNLayer!(ls[p].layers[4][1], weights["gpu_0/res$(count)_$(p-j[1])_branch2b_bn_riv_0"],
+                                             weights["gpu_0/res$(count)_$(p-j[1])_branch2b_bn_rm_0"],
+                                             weights["gpu_0/res$(count)_$(p-j[1])_branch2b_bn_s_0"],
+                                             weights["gpu_0/res$(count)_$(p-j[1])_branch2b_bn_b_0"])
+
             transfer!(ls[p].layers[5].weight , weights["gpu_0/res$(count)_$(p-j[1])_branch2c_w_0"])
-            ls[p].layers[6].moments.var = weights["gpu_0/res$(count)_$(p-j[1])_branch2c_bn_riv_0"] |> to4D
-            ls[p].layers[6].moments.mean = weights["gpu_0/res$(count)_$(p-j[1])_branch2c_bn_rm_0"] |> to4D
-            ls[p].layers[6].params .= vcat(weights["gpu_0/res$(count)_$(p-j[1])_branch2c_bn_s_0"],weights["gpu_0/res$(count)_$(p-j[1])_branch2c_bn_b_0"]) |> toArrType
+
+            loadBNLayer!(ls[p].layers[6], weights["gpu_0/res$(count)_$(p-j[1])_branch2c_bn_riv_0"],
+                                             weights["gpu_0/res$(count)_$(p-j[1])_branch2c_bn_rm_0"],
+                                             weights["gpu_0/res$(count)_$(p-j[1])_branch2c_bn_s_0"],
+                                             weights["gpu_0/res$(count)_$(p-j[1])_branch2c_bn_b_0"])
         end
         transfer!(ls[j[1]].shortcut[1].weight , weights["gpu_0/res$(count)_0_branch1_w_0"])
-        ls[j[1]].shortcut[2].moments.var = weights["gpu_0/res$(count)_0_branch1_bn_riv_0"] |> to4D
-        ls[j[1]].shortcut[2].moments.mean = weights["gpu_0/res$(count)_0_branch1_bn_rm_0"] |> to4D
-        ls[j[1]].shortcut[2].params .=  vcat(weights["gpu_0/res$(count)_0_branch1_bn_s_0"], weights["gpu_0/res$(count)_0_branch1_bn_b_0"]) |> toArrType
+
+        loadBNLayer!(ls[j[1]].shortcut[2], weights["gpu_0/res$(count)_0_branch1_bn_riv_0"],
+                                         weights["gpu_0/res$(count)_0_branch1_bn_rm_0"],
+                                         weights["gpu_0/res$(count)_0_branch1_bn_s_0"],
+                                         weights["gpu_0/res$(count)_0_branch1_bn_b_0"])
         count += 1
     end
     transfer!(ls[21].mult.weight, permutedims(weights["gpu_0/pred_w_0"], (2,1)))
