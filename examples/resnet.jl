@@ -1,13 +1,13 @@
 using Statistics, Knet, KnetLayers, BSON, ImageMagick, Images
 
 """
-ResNet Model
+ResNet Models
+
 Pre trained ResNet{18,34,50,101,152} weights are available.
 See below to see how to use it!
 
 ```julia
   julia> include(KnetLayers.dir("examples","resnet.jl"))
-  trained_resnet50_layers (generic function with 2 methods)
 
   julia> m = ResNet{50}(trained=true)
   ResNet{50}()
@@ -126,7 +126,7 @@ function init(block, layers, channels; classes=1000, N=50, thumbnail=false, kwar
     end
     bottom =  Chain(BatchNorm(channels[end]),
                   ReLU(),
-                  x->mean(x,dims=(1,2)),
+                  Pool(window=(7,7), mode=1),
                   mat,
                   Linear(input=in_channels, output=classes))
     return top,Chain(stages...),bottom
@@ -142,12 +142,12 @@ configs = Dict(18  => (BasicV2, [2, 2, 2, 2], [64, 64, 128, 256, 512]),
 function (m::ResNet)(x;stage=0)
   if stage == 0
     return m.bottom(m.stages(m.top(x)))
+  elseif stage < 4
+    return m.stages[1:stage](m.top(x))
+  elseif stage == 5
+    return m.bottom[1:3](m.stages(m.top(x)))
   else
-    x = m.top(x)
-    for i=1:stage
-       x = m.stages[i](x)
-    end
-    return x
+    error("invalid stage=$(stage), returning input")
   end
 end
 (m::ResNet)(x::Union{AbstractMatrix,AbstractString}; stage=0) where {T,N} = m(preprocess(x); stage=stage)
@@ -171,8 +171,9 @@ Base.show(io::IO, ::ResNet{N}) where N = print(io, "ResNet{$N}()")
 #### Utils
 ###
 const atype = KnetLayers.arrtype
-transfer!(p::Param, x)  = copyto!(p.value,x)
-transfer!(p, x) = copyto!(p,x)
+transfer!(p::Param, x)  = transfer!(p.value,x)
+transfer!(p::KnetArray, x::AbstractArray) = p .= KnetArray(x)
+transfer!(p,x) =  p .= x
 to4D(x) = reshape(convert(atype,x),1,1,length(x),1)
 toArrType(x) = convert(atype,x)
 
