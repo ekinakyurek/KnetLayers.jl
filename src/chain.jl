@@ -30,6 +30,8 @@ Base.getindex(c::Chain, i::AbstractArray) = Chain(c.layers[i]...)
 Base.getindex(c::Chain, i::Integer) = c.layers[i]
 Base.getindex(c::Chain, ::Colon) = c
 Base.length(c::Chain) = length(c.layers)
+Base.iterate(c::Chain) = Base.iterate(c.layers)
+Base.iterate(c::Chain, state) = Base.iterate(c.layers, state)
 
 function Base.show(io::IO, c::Chain)
   print(io, "Chain(")
