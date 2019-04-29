@@ -1,126 +1,171 @@
-using Knet, KnetLayers, BSON, ImageMagick, Images
+using Statistics, Knet, KnetLayers, BSON, ImageMagick, Images
 
 """
 ResNet Model
-Currently only pre-trained ResNet50 weights available.
+Pre trained ResNet{18,34,50,101,152} weights are available.
+See below to see how to use it!
 
 ```julia
-
   julia> include(KnetLayers.dir("examples","resnet.jl"))
   trained_resnet50_layers (generic function with 2 methods)
 
-  julia> model = trained(ResNet{50})
+  julia> m = ResNet{50}(trained=true)
   ResNet{50}()
 
-  julia> topK(model.labels, model("/Users/ekin/Downloads/gray-wolf_sam-parks.png");K=5)
+  julia> topK(m.labels, m("/Users/ekin/Downloads/gray-wolf_sam-parks.png");K=5)
   5-element Array{String,1}:
-   "timber wolf, grey wolf, gray wolf, Canis lupus"
-   "white wolf, Arctic wolf, Canis lupus tundrarum"
-   "Eskimo dog, husky"
-   "coyote, prairie wolf, brush wolf, Canis latrans"
-   "red wolf, maned wolf, Canis rufus, Canis niger"
+  "timber wolf, grey wolf, gray wolf, Canis lupus"
+  "white wolf, Arctic wolf, Canis lupus tundrarum"
+  "red wolf, maned wolf, Canis rufus, Canis niger"
+  "dingo, warrigal, warragal, Canis dingo"
+  "coyote, prairie wolf, brush wolf, Canis latrans"
 ```
 """
 struct ResNet{N}
-  layers::Chain
+  top::Chain
+  stages::Chain
+  bottom::Chain
   labels::Array{String}
 end
-#model url: https://github.com/FluxML/Metalhead.jl/releases/download/v0.1.1/resnet.bson
-#reference: https://github.com/FluxML/Metalhead.jl
 
-
-struct ResidualBlock
-  layers
-  shortcut
+struct BasicV2
+  layers::Chain
+  downsample::Union{Conv,Nothing}
 end
 
-function ResidualBlock(filters, kernels::Array{Tuple{Int,Int}}, pads::Array{Tuple{Int,Int}}, strides::Array{Tuple{Int,Int}}, shortcut = identity)
-  layers = []
-  for i in 2:length(filters)
-    push!(layers, Conv(activation=nothing, height=kernels[i-1][1], width=kernels[i-1][2], inout=filters[i-1]=>filters[i], padding = pads[i-1], stride = strides[i-1], mode=1, binit=nothing))
-    if i != length(filters)
-      push!(layers, Chain(BatchNorm(filters[i]),ReLU())) # I think we need batchnorm with relu activation
-    else
-      push!(layers, BatchNorm(filters[i]))
-    end
-  end
-  ResidualBlock(Chain(layers...), shortcut)
-end
-
-ResidualBlock(filters, kernels::Array{Int}, pads::Array{Int}, strides::Array{Int}, shortcut = identity) =
-  ResidualBlock(filters, [(i,i) for i in kernels], [(i,i) for i in pads], [(i,i) for i in strides], shortcut)
-
-(r::ResidualBlock)(input) = relu.(r.layers(input) + r.shortcut(input))
-
-function BasicBlock(filters::Int, downsample::Bool = false, res_top::Bool = false)
-  # NOTE: res_top is set to true if this is the first residual connection of the architecture
-  # If the number of channels is to be halved set the downsample argument to true
-  if !downsample || res_top
-    return ResidualBlock([filters for i in 1:3], [3,3], [1,1], [1,1])
-  end
-  shortcut = Chain(Conv(activation=nothing, height=3, width=3, inout=filters÷2=>filters, padding = (1,1), stride = (2,2), mode=1, binit=nothing), BatchNorm(filters))
-  ResidualBlock([filters÷2, filters, filters], [3,3], [1,1], [1,2], shortcut)
-end
-
-function Bottleneck(filters::Int, downsample::Bool = false, res_top::Bool = false)
-  # NOTE: res_top is set to true if this is the first residual connection of the architecture
-  # If the number of channels is to be halved set the downsample argument to true
-  if !downsample && !res_top
-    ResidualBlock([4 * filters, filters, filters, 4 * filters], [1,3,1], [0,1,0], [1,1,1])
-  elseif downsample && res_top
-    ResidualBlock([filters, filters, filters, 4 * filters], [1,3,1], [0,1,0], [1,1,1], Chain(Conv(activation=nothing, height=1,width=1, inout=filters=>4 * filters, padding = (0,0), stride = (1,1), mode=1, binit=nothing), BatchNorm(4 * filters)))
+function BasicV2(channels, stride; downsample=false, in_channels=0, kwargs...)
+  layers = Chain(
+                BatchNorm(in_channels),
+                ReLU(),
+                Conv(height=3, width=3, inout=in_channels=>channels,
+                     padding = 1, stride = stride, binit=nothing, mode=1),
+                BatchNorm(channels÷4),
+                ReLU(),
+                Conv(height=3, width=3, inout=channels=>channels,
+                     padding = 1, stride = 1, binit=nothing, mode=1)
+                )
+  if downsample
+    return BasicV2(layers, Conv(height=1, width=1, inout=in_channels=>channels,
+                                padding = 0, stride = stride, mode=1, binit=nothing))
   else
-    shortcut = Chain(Conv(activation=nothing, height=1, width=1, inout=2 * filters=>4 * filters, padding = (0,0), stride = (2,2), mode=1, binit=nothing), BatchNorm(4 * filters))
-    ResidualBlock([2 * filters, filters, filters, 4 * filters], [1,3,1], [0,1,0], [1,1,2], shortcut)
+    return BasicV2(layers,nothing)
   end
 end
 
-function load_resnet(Block, layers, initial_filters::Int = 64, nclasses::Int = 1000)
-  local top = []
-  local residual = []
-  local bottom = []
+function (m::BasicV2)(x)
+      residual = x
+      x = m.layers[1:2](x)
+      if m.downsample !== nothing
+          residual = m.downsample(x)
+      end
+      x = m.layers[3:length(m.layers.layers)](x)
+      return x + residual
+end
 
-  push!(top, Chain(Conv(activation=nothing, width=7, height=7, inout=3=>initial_filters, padding = (3,3), stride = (2,2), mode=1, binit=nothing), BatchNorm(initial_filters)))
-  push!(top, Pool(window=(3,3), padding = (1,1), stride = (2,2)))
+struct BottleneckV2
+  layers::Chain
+  downsample::Union{Conv,Nothing}
+end
 
-  for i in 1:length(layers)
-    push!(residual, Block(initial_filters, true, i==1))
-    for j in 2:layers[i]
-      push!(residual, Block(initial_filters))
-    end
-    initial_filters *= 2
-  end
-
-  push!(bottom, Pool(window=(7,7), mode=1))
-  push!(bottom, x -> mat(x))
-  if Block == Bottleneck
-    push!(bottom, (Linear(input=2048,output=nclasses)))
+function BottleneckV2(channels, stride; downsample=false, in_channels=0, kwargs...)
+  layers = Chain(
+                BatchNorm(in_channels),
+                ReLU(),
+                Conv(height=1, width=1, inout=in_channels=>channels÷4,
+                     padding = 0, stride = 1, binit=nothing, mode=1),
+                BatchNorm(channels÷4),
+                ReLU(),
+                Conv(height=3, width=3, inout=channels÷4=>channels÷4,
+                     padding = 1, stride = stride, binit=nothing, mode=1),
+                BatchNorm(channels÷4),
+                ReLU(),
+                Conv(height=1, width=1, inout=channels÷4=>channels,
+                     padding = 0, stride = 1, binit=nothing, mode=1)
+                )
+  if downsample
+    return BottleneckV2(layers,
+                        Conv(height=1, width=1, inout=in_channels=>channels,
+                        padding = 0, stride = stride, mode=1, binit=nothing))
   else
-    push!(bottom, (Dense(input=512,output=nclasses)))
+    return BottleneckV2(layers,nothing)
   end
-  push!(bottom, softmax)
-
-  Chain(top..., residual..., bottom...)
 end
 
-resnet_configs = Dict(18 => (BasicBlock, [2, 2, 2, 2]),
-                      34 => (BasicBlock, [3, 4, 6, 3]),
-                      50 => (Bottleneck, [3, 4, 6, 3]),
-                      101 => (Bottleneck, [3, 4, 23, 3]),
-                      152 => (Bottleneck, [3, 8, 36, 3]))
+function (m::BottleneckV2)(x)
+      residual = x
+      x = m.layers[1:2](x)
+      if m.downsample !== nothing
+          residual = m.downsample(x)
+      end
+      x = m.layers[3:length(m.layers.layers)](x)
+      return x + residual
+end
+
+function _make_layer(block, layers, channels, stride, stage_index; in_channels=0)
+  layer = [block(channels, stride, downsample=(channels != in_channels), in_channels=in_channels)]
+  for _ in 1:layers-1
+         push!(layer, block(channels, 1, downsample=false, in_channels=channels))
+  end
+  return Chain(layer...)
+end
+
+function init(block, layers, channels; classes=1000, N=50, thumbnail=false, kwargs...)
+  @assert length(layers) == length(channels) - 1 "error"
+  top = Chain(BatchNorm(3),
+                Conv(height=7, width=7, inout=3=>channels[1],
+                    padding = 1, stride = 2, binit=nothing, mode=1),
+                BatchNorm(channels[1]),
+                ReLU(),
+                Pool(window=3, padding = 1, stride = 2))
+    stages = Chain[]
+    in_channels = channels[1]
+    for (i, num_layer) in enumerate(layers)
+          stride = i == 1 ? 1 : 2
+          push!(stages,_make_layer(block, num_layer, channels[i+1], stride, i+1, in_channels=in_channels))
+          in_channels = channels[i+1]
+    end
+    bottom =  Chain(BatchNorm(channels[end]),
+                  ReLU(),
+                  x->mean(x,dims=(1,2)),
+                  mat,
+                  Linear(input=in_channels, output=classes))
+    return top,Chain(stages...),bottom
+end
+
+configs = Dict(18  => (BasicV2, [2, 2, 2, 2], [64, 64, 128, 256, 512]),
+               34  => (BasicV2, [3, 4, 6, 3], [64, 64, 128, 256, 512]),
+               50  => (BottleneckV2, [3, 4, 6, 3], [64, 256, 512, 1024, 2048]),
+               101 => (BottleneckV2, [3, 4, 23, 3],[64, 256, 512, 1024, 2048]),
+               152 => (BottleneckV2, [3, 8, 36, 3],[64, 256, 512, 1024, 2048]))
 
 
-
-
-(m::ResNet)(x) = m.layers(x)
-(m::ResNet)(x::Union{AbstractMatrix,AbstractString}) where {T,N} = m.layers(preprocess(x))
+function (m::ResNet)(x;stage=0)
+  if stage == 0
+    return m.bottom(m.stages(m.top(x)))
+  else
+    x = m.top(x)
+    for i=1:stage
+       x = m.stages[i](x)
+    end
+    return x
+  end
+end
+(m::ResNet)(x::Union{AbstractMatrix,AbstractString}; stage=0) where {T,N} = m(preprocess(x); stage=stage)
 topK(labels::Vector{String},y;K=5) = labels[sortperm(vec(y);rev=true)[1:K]]
 
-ResNet{N}() where N = ResNet{N}(load_resnet(resnet_configs[N]...),getLabels())
-trained(::Type{ResNet{N}}) where N = error("Pretrained Weights for ResNet$N are not available")
-Base.show(io::IO, ::ResNet{N}) where N = print(io, "ResNet{$N}()")
-trained(::Type{ResNet{50}}) = ResNet{50}(trained_resnet50_layers(),getLabels())
+function ResNet{N}(;trained=false, mfile=KnetLayers.dir("examples","resnet$(N)v2.bson")) where N
+   resnet = ResNet{N}(init(configs[N]...)...,getLabels())
+   if trained
+     if !isfile(mfile)
+        download(mfile,mfile)
+     end
+     weights = BSON.load(mfile)
+     loadResNet!(resnet,weights)
+   end
+   return resnet
+end
 
+Base.show(io::IO, ::ResNet{N}) where N = print(io, "ResNet{$N}()")
 
 ###
 #### Utils
@@ -138,13 +183,17 @@ function getLabels(labels=KnetLayers.dir("examples","imagenet_labels.txt"))
   return readlines(labels)
 end
 
+import Base: /
+/(a::RGB, b::RGB) = RGB(a.r/b.r, a.g/b.g, a.b/b.b)
+
 function preprocess(img::AbstractMatrix)
   # Resize such that smallest edge is 256 pixels long
     img = resize_smallest_dimension(img, 256)
-    im = center_crop(img, 224)
-    z = (channelview(im) .* 255 .- 128)./128;
-    z1 = Float32.(permutedims(z, (3, 2, 1))[:,:,:,:]);
+    im  = (center_crop(img, 224) .- RGB(0.485, 0.456, 0.406)) ./ RGB(0.229, 0.224, 0.225)
+    z   =  channelview(im)
+    z1  = Float32.(permutedims(z, (3, 2, 1))[:,:,:,:]);
 end
+
 preprocess(img::AbstractString)  = preprocess(RGB.(load(img)))
 
 # Resize an image such that its smallest dimension is the given length
@@ -169,65 +218,85 @@ function center_crop(im, len)
   return im[div(end,2)-l2:div(end,2)+l2-adjust,div(end,2)-l2:div(end,2)+l2-adjust]
 end
 
-function loadBNLayer!(m::BatchNorm, var, mean, scale, bias)
-  m.moments.var  = var  |> to4D
-  m.moments.mean = mean |> to4D
-  m.params       = vcat(scale,bias) |> toArrType
+
+# Load Utils
+function loadBNLayer!(m::BatchNorm, weights, prefix)
+  m.moments.var  = weights[Symbol(prefix*"running_var")]  |> to4D
+  m.moments.mean = weights[Symbol(prefix*"running_mean")] |> to4D
+  m.params       = vcat(weights[Symbol(prefix*"gamma")],weights[Symbol(prefix*"beta")]) |> toArrType
 end
 
-function trained_resnet50_layers(model=KnetLayers.dir("examples","resnet.bson"))
-    if !isfile(model)
-        download("https://github.com/FluxML/Metalhead.jl/releases/download/v0.1.1/resnet.bson",model)
-    end
+function loadConvLayer!(m::Conv, weights, prefix; binit=false)
+  transfer!(m.weight, weights[Symbol(prefix*"weight")])
+  if binit
+    transfer!(m.bias.b,  weights[Symbol(prefix*"bias")])
+  end
+end
 
-    weight = BSON.load(model)
-    weights = Dict{Any ,Any}()
-    for ele in keys(weight)
-        weights[string(ele)] = weight[ele]
-    end
+function loadDenseLayer!(m::Linear, weights, prefix; binit=true)
+  transfer!(m.mult.weight, permutedims(weights[Symbol(prefix*"weight")],(2,1)))
+  if binit
+    transfer!(m.bias.b,  weights[Symbol(prefix*"bias")])
+  end
+end
 
-    ls = load_resnet(resnet_configs[50]...)
+function loadTop!(top::Chain, weights, prefix)
+  loadBNLayer!(top[1], weights, string(prefix,"batchnorm0_"))
+  loadConvLayer!(top[2], weights, string(prefix,"conv0_"))
+  loadBNLayer!(top[3], weights, string(prefix,"batchnorm1_"))
+end
 
-    transfer!(ls[1][1].weight, weights["gpu_0/conv1_w_0"])
-    loadBNLayer!(ls[1][2],weights["gpu_0/res_conv1_bn_riv_0"],
-                          weights["gpu_0/res_conv1_bn_rm_0"],
-                          weights["gpu_0/res_conv1_bn_s_0"],
-                          weights["gpu_0/res_conv1_bn_b_0"])
+function loadBottom!(bottom::Chain, weights, prefix)
+  loadBNLayer!(bottom[1], weights, string(prefix,"batchnorm2_"))
+  loadDenseLayer!(bottom[5], weights, string(prefix,"dense0_"))
+end
 
-    count = 2
+function loadBlock!(block::BottleneckV2, weights, prefix, bn, conv)
+  loadBNLayer!(block.layers[1], weights, string(prefix,"batchnorm$(bn)_"))
+  loadConvLayer!(block.layers[3], weights, string(prefix,"conv$(conv)_"))
+  bn+=1; conv+=1
+  loadBNLayer!(block.layers[4], weights, string(prefix,"batchnorm$(bn)_"))
+  loadConvLayer!(block.layers[6], weights, string(prefix,"conv$(conv)_"))
+  bn+=1; conv+=1
+  loadBNLayer!(block.layers[7], weights, string(prefix,"batchnorm$(bn)_"))
+  loadConvLayer!(block.layers[9], weights, string(prefix,"conv$(conv)_"))
+  bn+=1; conv+=1
+  if block.downsample !== nothing
+    loadConvLayer!(block.downsample, weights, string(prefix,"conv$(conv)_"))
+    conv+=1
+  end
+  return bn, conv
+end
 
-    for j in [3:5, 6:9, 10:15, 16:18]
-        for p in j
-            transfer!(ls[p].layers[1].weight, weights["gpu_0/res$(count)_$(p-j[1])_branch2a_w_0"])
+function loadBlock!(block::BasicV2, weights, prefix, bn, conv)
+  loadBNLayer!(block.layers[1], weights, string(prefix,"batchnorm$(bn)_"))
+  loadConvLayer!(block.layers[3], weights, string(prefix,"conv$(conv)_"))
+  bn+=1; conv+=1
+  loadBNLayer!(block.layers[4], weights, string(prefix,"batchnorm$(bn)_"))
+  loadConvLayer!(block.layers[6], weights, string(prefix,"conv$(conv)_"))
+  bn+=1; conv+=1
+  if block.downsample !== nothing
+    loadConvLayer!(block.downsample, weights, string(prefix,"conv$(conv)_"))
+    conv+=1
+  end
+  return bn, conv
+end
 
-            loadBNLayer!(ls[p].layers[2][1], weights["gpu_0/res$(count)_$(p-j[1])_branch2a_bn_riv_0"],
-                                             weights["gpu_0/res$(count)_$(p-j[1])_branch2a_bn_rm_0"],
-                                             weights["gpu_0/res$(count)_$(p-j[1])_branch2a_bn_s_0"],
-                                             weights["gpu_0/res$(count)_$(p-j[1])_branch2a_bn_b_0"])
+function loadStage!(stage::Chain, weights, prefix)
+  bn   = 0
+  conv = 0
+  for (i,block) in enumerate(stage.layers)
+      bn, conv = loadBlock!(block,weights,prefix,bn,conv)
+  end
+end
 
-            transfer!(ls[p].layers[3].weight , weights["gpu_0/res$(count)_$(p-j[1])_branch2b_w_0"])
-
-            loadBNLayer!(ls[p].layers[4][1], weights["gpu_0/res$(count)_$(p-j[1])_branch2b_bn_riv_0"],
-                                             weights["gpu_0/res$(count)_$(p-j[1])_branch2b_bn_rm_0"],
-                                             weights["gpu_0/res$(count)_$(p-j[1])_branch2b_bn_s_0"],
-                                             weights["gpu_0/res$(count)_$(p-j[1])_branch2b_bn_b_0"])
-
-            transfer!(ls[p].layers[5].weight , weights["gpu_0/res$(count)_$(p-j[1])_branch2c_w_0"])
-
-            loadBNLayer!(ls[p].layers[6], weights["gpu_0/res$(count)_$(p-j[1])_branch2c_bn_riv_0"],
-                                             weights["gpu_0/res$(count)_$(p-j[1])_branch2c_bn_rm_0"],
-                                             weights["gpu_0/res$(count)_$(p-j[1])_branch2c_bn_s_0"],
-                                             weights["gpu_0/res$(count)_$(p-j[1])_branch2c_bn_b_0"])
-        end
-        transfer!(ls[j[1]].shortcut[1].weight , weights["gpu_0/res$(count)_0_branch1_w_0"])
-
-        loadBNLayer!(ls[j[1]].shortcut[2], weights["gpu_0/res$(count)_0_branch1_bn_riv_0"],
-                                         weights["gpu_0/res$(count)_0_branch1_bn_rm_0"],
-                                         weights["gpu_0/res$(count)_0_branch1_bn_s_0"],
-                                         weights["gpu_0/res$(count)_0_branch1_bn_b_0"])
-        count += 1
-    end
-    transfer!(ls[21].mult.weight, permutedims(weights["gpu_0/pred_w_0"], (2,1)))
-    transfer!(ls[21].bias.b, weights["gpu_0/pred_b_0"])
-    return ls
+const idmap = Dict{Int,Int}(18=>2,34=>3,50=>4,101=>5,152=>7)
+function loadResNet!(resnet::ResNet{N}, weights; prefix="resnetv2") where N
+  prefix=prefix*string(idmap[N],"_");
+  loadTop!(resnet.top,weights,prefix)
+  for i=1:length(resnet.stages)
+      loadStage!(resnet.stages[i], weights, "$(prefix)stage$(i)_")
+  end
+  loadBottom!(resnet.bottom,weights,prefix)
+  return resnet
 end
