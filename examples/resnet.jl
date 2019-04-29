@@ -22,9 +22,7 @@ See below to see how to use it!
 ```
 """
 struct ResNet{N}
-  top::Chain
-  stages::Chain
-  bottom::Chain
+  layers::Chain
   labels::Array{String}
 end
 
@@ -109,27 +107,26 @@ function _make_layer(block, layers, channels, stride, stage_index; in_channels=0
   return Chain(layer...)
 end
 
-function init(block, layers, channels; classes=1000, N=50, thumbnail=false, kwargs...)
+function _init(block, layers, channels; classes=1000, N=50, stage=0)
   @assert length(layers) == length(channels) - 1 "error"
   top = Chain(BatchNorm(3),
                 Conv(height=7, width=7, inout=3=>channels[1],
-                    padding = 1, stride = 2, binit=nothing, mode=1),
-                BatchNorm(channels[1]),
-                ReLU(),
+                     padding = 1, stride = 2, binit=nothing, mode=1),
+                BatchNorm(channels[1]), ReLU(),
                 Pool(window=3, padding = 1, stride = 2))
+
     stages = Chain[]
     in_channels = channels[1]
     for (i, num_layer) in enumerate(layers)
           stride = i == 1 ? 1 : 2
           push!(stages,_make_layer(block, num_layer, channels[i+1], stride, i+1, in_channels=in_channels))
           in_channels = channels[i+1]
+          stage==i && return Chain(top,Chain(stages...))
     end
-    bottom =  Chain(BatchNorm(channels[end]),
-                  ReLU(),
-                  Pool(window=(7,7), mode=1),
-                  mat,
-                  Linear(input=in_channels, output=classes))
-    return top,Chain(stages...),bottom
+    bottom =  Chain(BatchNorm(channels[end]), ReLU(), Pool(window=(7,7), mode=1))
+    stage==5 && return Chain(top,Chain(stages...), bottom)
+    classifier = Chain(mat,Linear(input=in_channels,output=classes))
+    return Chain(top,Chain(stages...),bottom,classifier)
 end
 
 configs = Dict(18  => (BasicV2, [2, 2, 2, 2], [64, 64, 128, 256, 512]),
@@ -138,26 +135,16 @@ configs = Dict(18  => (BasicV2, [2, 2, 2, 2], [64, 64, 128, 256, 512]),
                101 => (BottleneckV2, [3, 4, 23, 3],[64, 256, 512, 1024, 2048]),
                152 => (BottleneckV2, [3, 8, 36, 3],[64, 256, 512, 1024, 2048]))
 
+@inline (m::ResNet)(x) = m.layers(x)
 
-function (m::ResNet)(x;stage=0)
-  if stage == 0
-    return m.bottom(m.stages(m.top(x)))
-  elseif stage < 4
-    return m.stages[1:stage](m.top(x))
-  elseif stage == 5
-    return m.bottom[1:3](m.stages(m.top(x)))
-  else
-    error("invalid stage=$(stage), returning input")
-  end
-end
-(m::ResNet)(x::Union{AbstractMatrix,AbstractString}; stage=0) where {T,N} = m(preprocess(x); stage=stage)
+(m::ResNet)(x::Union{AbstractMatrix,AbstractString}) where {T,N} = m(preprocess(x))
 topK(labels::Vector{String},y;K=5) = labels[sortperm(vec(y);rev=true)[1:K]]
 
-function ResNet{N}(;trained=false, mfile=KnetLayers.dir("examples","resnet$(N)v2.bson")) where N
-   resnet = ResNet{N}(init(configs[N]...)...,getLabels())
+function ResNet{N}(;trained=false, stage=0, mfile=KnetLayers.dir("examples","resnet$(N)v2.bson")) where N
+   resnet = ResNet{N}(_init(configs[N]...; stage=stage),getLabels())
    if trained
      if !isfile(mfile)
-        download(mfile,mfile)
+        download(mfile,mfile) #FIXME
      end
      weights = BSON.load(mfile)
      loadResNet!(resnet,weights)
@@ -179,7 +166,7 @@ toArrType(x) = convert(atype,x)
 
 function getLabels(labels=KnetLayers.dir("examples","imagenet_labels.txt"))
   if !isfile(labels)
-      download("https://github.com/ekinakyurek/KnetLayers.jl/releases/download/v0.2.0/imagenet_labels.txt",labels)
+      download("https://github.com/ekinakyurek/KnetLayers.jl/releases/download/v0.2.0/imagenet_labels.txt",labels) #FIXME
   end
   return readlines(labels)
 end
@@ -249,7 +236,10 @@ end
 
 function loadBottom!(bottom::Chain, weights, prefix)
   loadBNLayer!(bottom[1], weights, string(prefix,"batchnorm2_"))
-  loadDenseLayer!(bottom[5], weights, string(prefix,"dense0_"))
+end
+
+function loadFinal!(bottom::Chain, weights, prefix)
+  loadDenseLayer!(bottom[2], weights, string(prefix,"dense0_"))
 end
 
 function loadBlock!(block::BottleneckV2, weights, prefix, bn, conv)
@@ -294,10 +284,15 @@ end
 const idmap = Dict{Int,Int}(18=>2,34=>3,50=>4,101=>5,152=>7)
 function loadResNet!(resnet::ResNet{N}, weights; prefix="resnetv2") where N
   prefix=prefix*string(idmap[N],"_");
-  loadTop!(resnet.top,weights,prefix)
-  for i=1:length(resnet.stages)
-      loadStage!(resnet.stages[i], weights, "$(prefix)stage$(i)_")
+  loadTop!(resnet.layers[1],weights,prefix)
+  for (i,stage) in enumerate(resnet.layers[2])
+      loadStage!(resnet.layers[2][i], weights, "$(prefix)stage$(i)_")
   end
-  loadBottom!(resnet.bottom,weights,prefix)
+  if length(resnet.layers) > 2
+    loadBottom!(resnet.layers[3],weights,prefix)
+  end
+  if length(resnet.layers) > 3
+    loadFinal!(resnet.layers[4],weights,prefix)
+  end
   return resnet
 end
