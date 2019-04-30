@@ -57,7 +57,7 @@ struct SigmoidCrossEntropy <: Loss
     dims::Int
 end
 SigmoidCrossEntropy(;dims=1) = SigmoidCrossEntropy(dims)
-(l::SigmoidCrossEntropy)(y,z) = sum(relu.(x) .- x .* z - log.(sigm.(abs.(x))),dims=dims)
+(l::SigmoidCrossEntropy)(x,z) = sum(relu.(x) .- x .* z - log.(sigm.(abs.(x))),dims=dims)
 
 ####
 #### Utils
