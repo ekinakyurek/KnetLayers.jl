@@ -221,7 +221,7 @@ function PadRNNOutput(s::RNNOutput)
         df = Tmax-lngths[i]
         if df > 0
             mask[:,:,end-df+1:end] .= false
-            pad = fill!(arrtype(undef,d*df),eltype(arrtype))
+            pad = fill!(arrtype(undef,d*df),zero(eltype(arrtype)))
             ypad = reshape(cat1d(y1,pad),d,Tmax) # hcat(y1,kpad)
             push!(cw,ypad)
         else

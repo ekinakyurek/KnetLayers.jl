@@ -51,12 +51,12 @@ Measures the error in discrete classification tasks in which each class is indep
 
 if dims==1, First dimension is assumed to be predicted logits.
 
-elseif dims==2, Last dimension is assumed to be predicted logits.    
+elseif dims==2, Last dimension is assumed to be predicted logits.
 """
 struct SigmoidCrossEntropy <: Loss
     dims::Int
 end
-SigmoidCrossEntropyLoss(;dims=1) = SigmoidCrossEntropyLoss(dims)
+SigmoidCrossEntropy(;dims=1) = SigmoidCrossEntropy(dims)
 (l::SigmoidCrossEntropy)(y,z) = sum(relu.(x) .- x .* z - log.(sigm.(abs.(x))),dims=dims)
 
 ####
