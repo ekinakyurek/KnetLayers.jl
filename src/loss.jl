@@ -53,13 +53,13 @@ if dims==1, First dimension is assumed to be predicted logits.
 
 elseif dims==2, Last dimension is assumed to be predicted logits.
 """
-struct SigmoidCrossEntropy <: Loss
+struct SigmoidCrossEntropyLoss <: Loss
     dims::Int
 end
-SigmoidCrossEntropy(;dims=1) = SigmoidCrossEntropy(dims)
-function (l::SigmoidCrossEntropy)(x, z; average=true)
-    y = sum(relu.(x) .- x .* z - log.(sigm.(abs.(x))), dims=l.dims)
-    average ? mean(y) : sum(y)
+SigmoidCrossEntropyLoss(;dims=1) = SigmoidCrossEntropyLoss(dims)
+function (l::SigmoidCrossEntropyLoss)(x, z; average=true)
+    y = sum(relu.(x) .- x .* z - log.(sigm.(abs.(x))), dims=:)
+    average ? y ./ (prod(size(x))/prod(size(x)[l.dims])) : y
 end
 
 ####
