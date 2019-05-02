@@ -20,9 +20,11 @@
 function one_hot(shape:: NTuple{N, Int}, goldindices::AbstractArray{<:Integer}; dims=1, atype=KnetLayers.arrtype) where N
     T = eltype(atype)
     labels = zeros(T,shape)
-    flatten = findindices(labels,goldindices, dims=dims)
-    labels[flatten] .= one(T)
+    linearinds = findindices(labels,goldindices, dims=dims)
+    @inbounds for i in linearinds
+        labels[i] = one(T)
+    end
     return convert(atype,labels)
 end
 
-one_hot(y, a::AbstractArray{<:Integer}; atype=typeof(y), dims=1) = one_hot(size(y),a;atype=atype,dims=dims)
+one_hot(y, a::AbstractArray{<:Integer}; atype=typeof(value(y)), dims=1) = one_hot(size(y),a;atype=atype,dims=dims)
