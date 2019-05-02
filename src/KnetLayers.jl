@@ -49,7 +49,7 @@ settype!(t::Union{Type{KnetArray},Type{Array}}) = settype!(t{Float32})
 include("core.jl");
 include("primitive.jl");   export Bias, Multiply, Embed, Linear, Dense, BatchNorm
 include("nonlinear.jl");   export NonAct, ReLU,Sigm,Tanh,LeakyReLU,ELU,Dropout,LogSoftMax,SoftMax,LogSumExp
-include("loss.jl");        export CrossEntropyLoss, BCELoss, LogisticLoss, SigmoidCrossEntropy
+include("loss.jl");        export CrossEntropyLoss, BCELoss, LogisticLoss, SigmoidCrossEntropyLoss
 include("cnn.jl");         export Pool,UnPool,DeConv,Conv
 include("special.jl");     export MLP
 include("rnn.jl");         export RNN,SRNN,LSTM,GRU,RNNOutput,PadRNNOutput,PadSequenceArray
