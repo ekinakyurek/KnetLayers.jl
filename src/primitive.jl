@@ -23,7 +23,7 @@ mutable struct Multiply{P} <: Layer
     weight::P
 end
 Multiply(;input::Int, output::Int, winit=xavier, atype=arrtype) = Multiply(param(output, input; init=winit, atype=atype))
-@inline (m::Multiply)(x::Array{<:Integer}) = m.weight[:,x] # Lookup (EmbedLayer)
+@inline (m::Multiply)(x::AbstractArray{<:Integer}) = m.weight[:,x] # Lookup (EmbedLayer)
 
 # TODO: Find a faster (or compound) way for tensor-product
 function (m::Multiply)(x; keepsize=true)
@@ -36,6 +36,8 @@ function (m::Multiply)(x; keepsize=true)
     end
 end
 Base.show(io::IO,m::Multiply{P}) where P = print(io,Multiply{P},"(input=",size(m.weight,2)," output=",size(m.weight,1),")")
+@inline Base.size(m::Multiply) = size(m.weight)
+
 """
     Embed(input=inputSize, output=embedSize, winit=xavier, atype=KnetLayers.arrtype)
 Creates an embedding layer according to given `inputSize` and `embedSize`.
@@ -84,7 +86,7 @@ end
 Bias(sizes::Int...;atype=arrtype, winit=zeros, o...) = Bias(param(sizes...;atype=atype, init=winit, o...))
 Bias() = Bias(nothing)
 Base.show(io::IO,m::Bias{T}) where T = print(io,Bias{T},"(length=",length(m.b),")")
-
+@inline Base.size(m::Bias) = size(b)
 """
     Linear(input=inputSize, output=outputSize, winit=xavier, binit=zeros, atype=KnetLayers.arrtype)
 
@@ -110,7 +112,7 @@ function Linear(;input::Int, output::Int, winit=xavier, binit=zeros, atype=arrty
     Linear(Multiply(input=input, output=output, winit=winit, atype=atype),Bias(output, winit=binit, atype=atype))
 end
 @inline (m::Linear)(x) = m.bias(m.mult(x))
-
+@inline Base.size(m::Linear) = size(m.mult)
 """
     Dense(input=inputSize, output=outputSize, activation=ReLU(), winit=xavier, binit=zeros, atype=KnetLayers.arrtype)
 Creates a dense layer according to given `input` and `output` sizes.
@@ -141,7 +143,7 @@ end
 @inline (m::Dense{<:Activation})(x)= m.activation(m.linear(x))
 
 Base.show(io::IO, x::Dense) = print(io,typeof(x),"(",x.linear,")")
-
+@inline Base.size(m::Dense) = size(m.linear)
 #TO-DO: Remove after the issue is resolved:
 #https://github.com/denizyuret/Knet.jl/issues/418
 """
@@ -176,3 +178,52 @@ function BatchNorm(channels::Int;  usegpu = arrtype <: KnetArray, dataType=eltyp
 end
 @inline (m::BatchNorm)(x;o...) = batchnorm(x,m.moments,m.params;o...)
 Base.show(io::IO,x::BatchNorm) where P = print(io,BatchNorm,"(",x.params,", ",x.moments,")")
+
+
+"""
+    Diagonal(D::Integer)
+Creates an element-wise linear transformation layer with learnable
+vectors `w` and `b`:
+    y = w .* x .+ b
+The input `x` must be a array where `size(x, 1) == D`.
+"""
+struct Diagonal{T} <: Layer
+  w::T
+  b::T
+end
+
+Diagonal(D::Integer; winit = ones, binit = zeros, atype=arrtype) =
+  Diagonal(param(D; init=winit, atype=atype),
+           param(D; init=binit, atype=atype))
+
+function (a::Diagonal)(x)
+  w, b = a.w, a.b
+  return a.w.*x .+ a.b
+end
+
+Base.length(l::Diagonal) = length(l.w)
+
+function Base.show(io::IO, l::Diagonal)
+  print(io, "Diagonal(", length(l), ")")
+end
+
+
+"""
+    LayerNorm(h::Integer)
+A [normalisation layer](https://arxiv.org/pdf/1607.06450.pdf) designed to be
+used with recurrent hidden states of size `h`. Normalises the mean/stddev of
+each input before applying a per-neuron gain/bias.
+"""
+struct LayerNorm{T} <: Layer
+  diag::Diagonal{T}
+end
+
+LayerNorm(h::Integer) =
+  LayerNorm(Diagonal(h))
+
+
+(a::LayerNorm)(x) = a.diag(normalise(x))
+
+function Base.show(io::IO, l::LayerNorm)
+  print(io, "LayerNorm(", length(l.diag), ")")
+end

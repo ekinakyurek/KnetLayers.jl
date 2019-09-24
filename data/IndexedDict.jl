@@ -56,7 +56,7 @@ IndexedDict{T}() where T = IndexedDict{T}(Dict{T,Int}(),T[])
 
 function IndexedDict(toElement::Vector{T}) where T
     toIndex=Dict{T,Int}(v=>k for (k,v) in enumerate(toElement))
-    IndexedDict(toIndex, toElement)
+    IndexedDict{T}(toIndex, toElement)
 end
 
 function IndexedDict(toIndex::Dict{T,Int}) where T

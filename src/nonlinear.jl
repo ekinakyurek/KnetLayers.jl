@@ -54,6 +54,21 @@ mutable struct LeakyReLU <: Activation
 end
 @inline (l::LeakyReLU)(x) = relu.(x) .+ l.α*min.(0,x) # relu.(x) .+ l.α*relu.(-x) ?
 
+
+mutable struct GeLU <: Activation
+end
+"""
+    gelu(x) = 0.5x*(1 + tanh(√(2/π)*(x + 0.044715x^3)))
+[Gaussian Error Linear Unit](https://arxiv.org/pdf/1606.08415.pdf)
+activation function.
+"""
+function (::GeLU)(x)
+    T = eltype(x)
+    λ = T(√(2/π))
+    α = T(0.044715)
+    h = T(0.5)
+    return h .* x .* (one(T) .+ tanh.(λ .* (x .+ α * x.^3)))
+end
 """
     Dropout(p=0)
 
@@ -109,3 +124,14 @@ struct LogSumExp <: Activation
 end
 LogSumExp(;dims=:) = LogSumExp(dims)
 @inline (l::LogSumExp)(x) = logsumexp(x;dims=l.dims)
+
+
+"""
+    normalise(x; dims=1)
+    Normalises x to mean 0 and standard deviation 1, across the dimensions given by dims. Defaults to normalising over columns.
+"""
+function normalise(x; dims=1)
+  μ′ = mean(x, dims = dims)
+  σ′ = std(x, dims = dims, mean = μ′, corrected=false)
+  return (x .- μ′) ./ σ′
+end

@@ -1,6 +1,6 @@
 module KnetLayers
 
-using Knet
+using Knet, LinearAlgebra
 import Knet: save, load, gc, rnnforw, rnninit, _ser, RNN, BNMoments
 
 export gpu, KnetArray,
@@ -47,13 +47,17 @@ settype!(t::T) where T<:Type{Array{V}} where V <: AbstractFloat = (global arrtyp
 settype!(t::Union{Type{KnetArray},Type{Array}}) = settype!(t{Float32})
 
 include("core.jl");
-include("primitive.jl");   export Bias, Multiply, Embed, Linear, Dense, BatchNorm
-include("nonlinear.jl");   export NonAct, ReLU,Sigm,Tanh,LeakyReLU,ELU,Dropout,LogSoftMax,SoftMax,LogSumExp
+include("primitive.jl");   export Bias, Multiply, Embed, Linear, Dense, BatchNorm, Diagonal, LayerNorm
+include("nonlinear.jl");   export NonAct, ReLU,Sigm,Tanh,LeakyReLU,ELU, Dropout, LogSoftMax, SoftMax, LogSumExp, GeLU
 include("loss.jl");        export CrossEntropyLoss, BCELoss, LogisticLoss, SigmoidCrossEntropyLoss
 include("cnn.jl");         export Pool,UnPool,DeConv,Conv
 include("special.jl");     export MLP
 include("rnn.jl");         export RNN,SRNN,LSTM,GRU,RNNOutput,PadRNNOutput,PadSequenceArray
 include("chain.jl");       export Chain
+include("attention.jl");   export MultiheadAttention
+include("transformer.jl"); export Transformer, TransformerDecoder, PositionEmbedding, TransformerModel
+include("batchedmul.jl");  export batchedmul
+include("datasets/Datasets.jl"); export Datasets
 include("../data/IndexedDict.jl");
 include("../data/one_hot.jl");
 
