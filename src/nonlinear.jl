@@ -54,7 +54,7 @@ mutable struct LeakyReLU <: Activation
 end
 @inline (l::LeakyReLU)(x) = relu.(x) .+ l.α*min.(0,x) # relu.(x) .+ l.α*relu.(-x) ?
 
-
+#FIXME: x*x*x -> x.^3 after Knet new version
 mutable struct GeLU <: Activation
 end
 """
@@ -67,7 +67,7 @@ function (::GeLU)(x)
     λ = T(√(2/π))
     α = T(0.044715)
     h = T(0.5)
-    return h .* x .* (one(T) .+ tanh.(λ .* (x .+ α * x.^3)))
+    return h .* x .* (one(T) .+ tanh.(λ .* (x .+ α * x .* x .* x)))
 end
 """
     Dropout(p=0)

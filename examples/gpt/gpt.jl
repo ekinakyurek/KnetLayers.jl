@@ -27,7 +27,10 @@ end
 function (gpt::Gpt)(x, mask=nothing; all::Bool=false)
     e = gpt.drop(x)
     t = gpt.ts(e)
-    t = mask === nothing ? t : t .* reshape(mask,1,size(mask)...)
+    if mask != nothing
+        mask = convert(arrtype,mask)
+        t = t .* reshape(mask,1,size(mask)...)
+    end
     return t
 end
 """
@@ -43,12 +46,12 @@ function lmloss(embed::Embed, et, t, mask)
         s = size(t)
         #FIXME: transpose
         out = Embed(embed.weight')
-        return sim = KnetLayers.nllmask(out(t), et[2:end,:].*mask[2:end,:]) #(vocab, seq_len*batch)
+        return KnetLayers.nllmask(out(t), et[2:end,:].*mask[2:end,:]) #(vocab, seq_len*batch)
     elseif N == 2
         t = t[:, 1:end-1]
         s = size(t)
         out = Embed(embed.weight')
-        return sim = KnetLayers.nllmask(out(t), et[2:end,:] .*mask[2:end]) #(vocab, seq_len*batch)
+        return KnetLayers.nllmask(out(t), et[2:end,:] .*mask[2:end]) #(vocab, seq_len*batch)
     end
 end
 
@@ -88,7 +91,7 @@ function load_gpt_pretrain(n::Int=12;
     push!(vocab, delisym)
     push!(vocab, clfsym)
     if unksym ∉ vocab
-        pushfirst!(vocab,unk)
+         pushfirst!(vocab,unk)
     end
     bpe = Bpe(joinpath(dir("examples/gpt/pretrain/vocab_40000.bpe")))
     vocab = IndexedDict(vocab)
@@ -97,7 +100,7 @@ function load_gpt_pretrain(n::Int=12;
     ce = CompositeEmbedding(embed, pe, unksym)
     gpt = Gpt(768, 12, 768*4, 12; act=GeLU(), pdrop=0.1)
     pms = load_gpt_pretrain_params()
-    loadparams!(embed, [hcat(pms[2],randn(768, 3) .* 0.02)])
+    loadparams!(embed, [hcat(pms[2],randn(Float32,768, 3) .* 0.02)])
     loadparams!(pe, [pms[1]])
     for i = 1:n
         mhW = pms[12(i-1) + 3]
@@ -129,7 +132,8 @@ struct CompositeEmbedding <: Layer
     unksym::String
 end
 
-(m::CompositeEmbedding)(x) = m.pos(m.tok(x))
+(m::CompositeEmbedding)(x) =  m.pos(m.tok(x))
+   
 
 function loadparams!(m::Layer, ws)
     for (w,wo) in zip(params(m),ws)

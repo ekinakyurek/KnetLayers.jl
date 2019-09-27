@@ -118,7 +118,7 @@ function attention(query,
 
     if mask !== nothing
         #weird issue on @. mask = (1 - mask) * -1e9 which casue mask to be -Inf
-        mask = (1 .- mask) .* convert(T , -1e9)
+        mask = (T(1.0) .- mask) .* T(-1e9)
         ms = size(mask)
         #score = score .+ mask; use broadcast instead of repeat mask for head
         score = reshape(reshape(score, s[1:end-1]..., :, ms[end]) .+ reshape(mask, ms[1:end-1]..., 1, ms[end]), s)
@@ -126,11 +126,12 @@ function attention(query,
 
     if !future
         #without ... will cause data move back to cpu
-        fmask = tril!(fill!(similar(score, s[1:end-1]...), convert(T, -1e9)), -1)
+        fmask = convert(arrtype,tril!(fill!(Matrix{T}(undef,s[1:end-1]...),T(-1e9)),-1))
+        #fmask = tril!(fill!(similar(score, s[1:end-1]...), convert(T, -1e9)), -1)
         score = score .+ fmask
     end
 
-    score = softmax(score)
+    score = softmax(score;dims=1)
     dropout !== nothing && (score = dropout(score))
     batchedmul(value, score) #size(return) == (dims, q_seq_len, batch)
 end
