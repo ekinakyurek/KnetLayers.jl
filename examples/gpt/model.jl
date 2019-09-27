@@ -20,8 +20,8 @@ gpt_model, bpe, vocab_in, tokenizer = GPT.load_gpt_pretrain(12,
 
 set_tokenizer(tokenizer)
 
-const gpt = Chain(gpt_model, Dense(input=768,output=1), Dropout(0.1), CrossEntropyLoss())
-const embed = gpt[1].embed.tok
+gpt = Chain(gpt_model, Dense(input=768,output=1,activation=nothing), Dropout(0.1), CrossEntropyLoss())
+embed = gpt[1].embed.tok
 
 
 function loss(gpt, x1, x2, y, x1_mask, x2_mask, c1_index, c2_index)
@@ -53,7 +53,7 @@ function predict(gpt, x1, x2, y, x1_mask, x2_mask, c1_index, c2_index)
     c2 = hcat((t2[:,v,i] for (i,v) in enumerate(c2_index))...)
     p1 = gpt[2](gpt[3](c1))
     p2 = gpt[2](gpt[3](c2))
-    p = vcat(p1, p2)
+    p  = vcat(p1, p2)
     cl = gpt[4](p, y)
     #unstable type will cause performance issue
     p
@@ -63,9 +63,11 @@ const rocs = Datasets.StoryCloze()
 const ps = params(gpt)
 const opt = Adam(lr=6.25e-5)
 setoptim!(M, optimizer) = for p in params(M); p.opt = deepcopy(optimizer); end
+lrdecay!(M, decay::Real) = for p in params(M); p.opt.lr = p.opt.lr*decay; end
 
 
-function eval(gpt,data,vocab_in, vocab_out; Batch=4)
+
+function eval(gpt,data,vocab_in, vocab_out; Batch=8)
     println("eval:")
     datas = dataset(Datasets.Test, data)
     al,i = 0.0, 0
@@ -74,32 +76,60 @@ function eval(gpt,data,vocab_in, vocab_out; Batch=4)
         p = predict(gpt, b1, b2, y, b1_mask, b2_mask, c1i, c2i)
         a = accuracy(p, y)
         al += a
-        println(a)
-        i += 1
+        i  += 1
     end
-    al /= i
-    @show al
+    total =  al /= i
+    @show total
+    return total
 end
 
-function train1!(gpt, data, vocab_in, vocab_out; opt=nothing, epoch=10, Batch=4)
+function train1!(gpt, data, vocab_in, vocab_out; opt=nothing, epoch=10, Batch=8)
     #global Batch, rocs, opt, ps
     ps  = params(gpt)
     if opt !== Nothing
         setoptim!(gpt,opt)
     end
+    lss = typemax(Float64)
     for e = 1:epoch
         println("start training: $e")
         datas  = dataset(Datasets.Train, data)
         i, al  = 0, 0.0
+        grads = nothing
+
         while (batch = get_batch(datas,Batch)) !== nothing
             b1, b2, c1i, c2i, y, b1_mask, b2_mask, = preprocess(batch, vocab_in, vocab_out)
             J =  @diff loss(gpt, b1, b2, y, b1_mask, b2_mask, c1i, c2i)
-            print(J)
-            for w in params(J)
-              update!(w.value,grad(J,w),w.opt)
-           end
+            if grads == nothing
+                grads = map(w->grad(J,w),ps)
+            else
+                for (k,w) in enumerate(ps)
+                    grads[k] += grad(J,w)
+                end
+            end
+            
+            if i % 4 == 0 
+                for (k,w) in enumerate(ps)
+                    update!(w.value,grads[k]/4.0f0,w.opt)
+                end
+                for g in grads
+                    fill!(g,0.0f0)
+                end
+            end
+            
+            i  += 1
+            al += value(J)
+            if i%100==1
+                println(al/i)
+            end
         end
-        test()
+        nwlss = al/i
+        if nwlss < lss
+            lss=nwlss
+        else
+            lrdecay!(gpt,0.002)
+            println("lr decay!")
+        end
+        total = eval(gpt, data, vocab_in, vocab_out)
     end
 end
 

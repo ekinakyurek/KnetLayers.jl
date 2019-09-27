@@ -1,4 +1,6 @@
+
 import AutoGrad: @primitive, @zerograd
+import Knet: Cptr
 """
 `batchedmul(A, B))` performs a batch matrix-matrix product of matrices stored in `A`
 and `B`. `A` and `B` must be 3d and the last dimension represents the batch size.
@@ -14,11 +16,13 @@ function batchedmul(A, B; transA::Bool = false, transB::Bool = false)
     return C
 end
 
-function batchedmul(A::KnetArray, B::KnetArray{T}) where {T}
+function batchedmul(A::KnetArray, B::KnetArray{T}; transA::Bool = false, transB::Bool = false) where {T}
     m,n,bs = size(A)
-    n,k,bs = size(B)
-    return batchedmul!('N','N',one(T),A,B,zero(T),similar(A, (m, k, bs)))
-end
+    c,k,bs = size(B)
+    C = similar(A, (transA ? n : m),  (transB ? c : k), bs)
+    batchedmul!((transA ? 'T' : 'N'), (transB ? 'T' : 'N'), one(T), A, B, zero(T), C)
+    return C
+end 
 
 function batchedmul!(transA::AbstractChar, transB::AbstractChar, alpha::Number, A::KnetArray{T}, B::KnetArray{T}, beta::Number, C::KnetArray{T}) where {T}
     cublasop(c::Char)=(if c=='N'; 0; elseif c=='T'; 1; elseif c=='C'; 2; else error("Unknown cublas op $c"); end)
@@ -44,20 +48,23 @@ function batchedmul!(transA::AbstractChar, transB::AbstractChar, alpha::Number, 
         n=kb; k==nb;
     end
     (m == size(C,1) && n == size(C,2) && bs == size(C,3)) || throw(DimensionMismatch("$(map(size,(A,B,C)))"))
-    lda,ldb,ldc=ma,ka,ma
-    transa = Knet.cublasop(transA); transb = cublasop(transB)
+    lda,ldb,ldc= ma,kb,m
+    transa = cublasop(transA); transb = cublasop(transB)
     alpha = T[alpha]; beta = T[beta]
     strideA, strideB, strideC = m*k, k*n, m*n
+ #   println("sizes: $(map(size,(A,B,C)))")
+ #   println("strides: $strideA , $strideB , $strideC")
+ #   println("transes: $transA $transB")
+ #   println("LDAs: $lda , $ldb , $ldc")
     if T<:Float64
-        Knet.@cublas(cublasDgemmStridedBatched, (Cptr, UInt32, UInt32, Cint, Cint, Cint, Ptr{T}, Ptr{T}, Cint, Clonglong, Ptr{T}, Cint, Clonglong, Ptr{T}, Ptr{T}, Cint, Clonglong, Cint), cublashandle(), transa, transb, m, n, k, alpha, A, lda, strideA, B, ldb, strideB, beta, C, ldc, strideC, bs)
+        Knet.@cublas(cublasDgemmStridedBatched, (Cptr, UInt32, UInt32, Cint, Cint, Cint, Ptr{T}, Ptr{T}, Cint, Clonglong, Ptr{T}, Cint, Clonglong, Ptr{T}, Ptr{T}, Cint, Clonglong, Cint), Knet.cublashandle(), transa, transb, m, n, k, alpha, A, lda, strideA, B, ldb, strideB, beta, C, ldc, strideC, bs)
     elseif T<:Float32
-        Knet.@cublas(cublasSgemmStridedBatched, (Cptr, UInt32, UInt32, Cint, Cint, Cint, Ptr{T}, Ptr{T}, Cint, Clonglong, Ptr{T}, Cint, Clonglong, Ptr{T}, Ptr{T}, Cint, Clonglong, Cint), cublashandle(), transa, transb, m, n, k, alpha, A, lda, strideA, B, ldb, strideB, beta, C, ldc, strideC, bs)
+        Knet.@cublas(cublasSgemmStridedBatched, (Cptr, UInt32, UInt32, Cint, Cint, Cint, Ptr{T}, Ptr{T}, Cint, Clonglong, Ptr{T}, Cint, Clonglong, Ptr{T}, Ptr{T}, Cint, Clonglong, Cint), Knet.cublashandle(), transa, transb, m, n, k, alpha, A, lda, strideA, B, ldb, strideB, beta, C, ldc, strideC, bs)
     else
         error("CUBLAS does not support $T")
     end
     return C
 end
-
 #batched cpu gemm by BatchedRoutines.jl
 for (gemm, elty) in
     ((:dgemm_,:Float64),
@@ -112,3 +119,22 @@ end
 @primitive batchedmul(x1,x2; transA::Bool=false, transB::Bool=false),dy,y (transA ? batchedmul(x2, dy; transA=transB , transB=true) :  batchedmul(dy, x2;  transA=false, transB=!transB) )    (transB ? batchedmul(dy,x1; transA=true , transB= !transA) :  batchedmul(x1, dy;  transA=!transA , transB=false))
 @zerograd  batchedmul!(transA::AbstractChar, transB::AbstractChar, alpha::Number, A::KnetArray, B::KnetArray, beta::Number, C::KnetArray)
 @zerograd  batchedmul!(A, B, C)
+
+
+function testbatchmul()
+    for device in (Array,KnetArray)
+        C = []
+        KnetLayers.seed!(31)
+        A1,B1 = device.((randn(4, 3, 8),randn(3, 3, 8)))
+        push!(C,batchedmul(A1,B1))
+        A2,B2 = device.((randn(3, 4, 8),randn(3, 3, 8)))
+        push!(C,batchedmul(A2,B2; transA=true))
+        A3,B3 = device.((randn(3, 4, 8),randn(3, 4, 8)))
+        push!(C,batchedmul(A3,B3; transB=true))
+        A4,B4 = device.((randn(4, 3, 8),randn(3, 4, 8)))
+        push!(C,batchedmul(A4,B4; transB=true, transA=true))
+        for i in 1:4
+            println("size: $(size(C[i])), sum: $(sum(C[i]))")
+        end
+    end
+end
