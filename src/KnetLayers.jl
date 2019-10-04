@@ -56,7 +56,6 @@ include("rnn.jl");         export RNN,SRNN,LSTM,GRU,RNNOutput,PadRNNOutput,PadSe
 include("chain.jl");       export Chain
 include("attention.jl");   export MultiheadAttention
 include("transformer.jl"); export Transformer, TransformerDecoder, PositionEmbedding, TransformerModel
-include("batchedmul.jl");  export batchedmul
 include("datasets/Datasets.jl"); export Datasets
 include("../data/IndexedDict.jl");
 include("../data/one_hot.jl");
