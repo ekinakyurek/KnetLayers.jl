@@ -1,5 +1,6 @@
 using KnetLayers, BytePairEncoding
 import KnetLayers: IndexedDict
+import KnetLayers.AutoGrad: full
 
 ENV["DATADEPS_ALWAYS_ACCEPT"] = true
 
@@ -100,16 +101,16 @@ function train1!(gpt, data, vocab_in, vocab_out; opt=nothing, epoch=10, Batch=8)
             b1, b2, c1i, c2i, y, b1_mask, b2_mask, = preprocess(batch, vocab_in, vocab_out)
             J =  @diff loss(gpt, b1, b2, y, b1_mask, b2_mask, c1i, c2i)
             if grads == nothing
-                grads = map(w->grad(J,w),ps)
+                grads = map(w->full(grad(J,w)),params(J))
             else
                 for (k,w) in enumerate(ps)
                     grads[k] += grad(J,w)
                 end
             end
             
-            if i % 4 == 0 
+            if i % 4 == 1
                 for (k,w) in enumerate(ps)
-                    update!(w.value,grads[k]/4.0f0,w.opt)
+                    update!(value(w),grads[k]/4.0f0,w.opt)
                 end
                 for g in grads
                     fill!(g,0.0f0)

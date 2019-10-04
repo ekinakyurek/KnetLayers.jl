@@ -111,7 +111,7 @@ function attention(query,
                    dropout=nothing)
     T = eltype(query)
     dk = size(key, 1)
-    score = batchedmul(key, query; transA=true)
+    score = bmm(key, query; transA=true)
     score = score ./ convert(T , sqrt(dk))
 
     s = size(score)
@@ -133,5 +133,5 @@ function attention(query,
 
     score = softmax(score;dims=1)
     dropout !== nothing && (score = dropout(score))
-    batchedmul(value, score) #size(return) == (dims, q_seq_len, batch)
+    bmm(value, score) #size(return) == (dims, q_seq_len, batch)
 end
