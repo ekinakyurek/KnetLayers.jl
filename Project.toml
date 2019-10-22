@@ -1,7 +1,7 @@
 name = "KnetLayers"
 uuid = "e09e3f5a-3c2e-516c-a806-60ae64389a85"
 authors = ["ekinakyurek <akyurekekin@gmail.com>"]
-version = "0.1.0"
+version = "0.1.1"
 
 [deps]
 AutoGrad = "6710c13c-97f1-543f-91c5-74e8f7d95b35"
