@@ -80,11 +80,13 @@ function Filtering{T}(;height::Integer, width::Integer, inout::Pair=1=>1,
 
 end
 
-Filtering{T}(w, b, activation; stride=1, padding=0, mode=0, upscale=1, alpha=1) where T =
-    Filtering{T,typeof(w),typeof(activation),typeof(b)}(w, b, activation, (stride=stride, upscale=upscale, mode=mode, alpha=alpha, padding=padding))
+
+Filtering{T}(w, b, activation; stride=1, padding=0, mode=0, dilation=1, alpha=1) where T =
+    Filtering{T,typeof(w),typeof(activation),typeof(b)}(w, b, activation, (stride=stride, dilation=dilation, mode=mode, alpha=alpha, padding=padding))
 
 @inline (m::Filtering{typeof(conv4)})(x) =
      unmake4D(postConv(m, conv4(m.weight, make4D(x); m.options...)), ndims(x))
+
 
 Base.show(io::IO,m::Filtering{typeof(conv4),P,A,V}) where {P,A,V} =
     print(io,"Conv{$P,$A,$V}",m.options)
@@ -121,7 +123,7 @@ or an tuple with entries for each spatial dimension.
 * `bias=zeros`: bias initialization distribution
 * `padding=0`: the number of extra zeros implicitly concatenated at the start and at the end of each dimension.
 * `stride=1`: the number of elements to slide to reach the next filtering window.
-* `upscale=1`: upscale factor for each dimension.
+* `dilation=1`: dilation factor for each dimension.
 * `mode=0`: 0 for convolution and 1 for cross-correlation.
 * `alpha=1`: can be used to scale the result.
 * `handle`: handle to a previously created cuDNN context. Defaults to a Knet allocated handle.
@@ -156,7 +158,7 @@ or an tuple with entries for each spatial dimension.
 * `bias=zeros`: bias initialization distribution
 * `padding=0`: the number of extra zeros implicitly concatenated at the start and at the end of each dimension.
 * `stride=1`: the number of elements to slide to reach the next filtering window.
-* `upscale=1`: upscale factor for each dimension.
+* `dilation=1`: dilation factor for each dimension.
 * `mode=0`: 0 for convolution and 1 for cross-correlation.
 * `alpha=1`: can be used to scale the result.
 * `handle`: handle to a previously created cuDNN context. Defaults to a Knet allocated handle.

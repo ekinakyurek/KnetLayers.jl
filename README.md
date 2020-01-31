@@ -5,7 +5,7 @@
 [![](https://travis-ci.org/ekinakyurek/KnetLayers.jl.svg?branch=master)](https://travis-ci.org/ekinakyurek/KnetLayers.jl)
 [![codecov](https://codecov.io/gh/ekinakyurek/KnetLayers.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/ekinakyurek/KnetLayers.jl)
 
-KnetLayers provides configurable deep learning layers for [Knet](https://github.com/denizyuret/Knet.jl), fostering your model development. You are able to use Knet and [AutoGrad](https://github.com/denizyuret/AutoGrad.jl) functionalities without adding them to current workspace.
+KnetLayers provides usefull deep learning layers for [Knet](https://github.com/denizyuret/Knet.jl), fostering your model development. You are able to use Knet and [AutoGrad](https://github.com/denizyuret/AutoGrad.jl) functionalities without adding them to current workspace.
 
 ## Overview
 ```JULIA
