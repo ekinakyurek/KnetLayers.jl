@@ -133,7 +133,7 @@ end
 
 @inline _getEmbed(input::Integer,embed::Nothing) = (nothing,input)
 @inline _getEmbed(input::Integer,embed::Embed) =
-    size(embed.weight,2) == input ? (embed,input) : error("dimension mismatch in embeddings")
+    size(embed.weight,2) == input ? (embed,size(embed.weight,1)) : error("dimension mismatch in embeddings")
 @inline _getEmbed(input::Integer,embed::Integer) = (Embed(input=input,output=embed),embed)
 
 gate_mappings(::Type{<:SRNN}) = Dict(:h=>(1,2))
