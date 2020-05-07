@@ -1,12 +1,10 @@
-include("header.jl")
-
 @testset "primitive" begin
 
     arrtype = KnetLayers.arrtype
 
     @testset "Multiply" begin
         inputDim = 10; outputDim = 2;
-        m = Multiply(input=inputDim, output=outputDim; winit=randn)
+        m = Multiply(input=inputDim, output=outputDim, winit=randn)
         x = arrtype(zeros(inputDim, 1))
         y1 = m(x)
         y2 = arrtype(zeros(outputDim, 1))
@@ -24,17 +22,23 @@ include("header.jl")
         @test y1==y2
     end
 
-    @testset "linear" begin
+    @testset "Bias" begin
+        m  = Bias(10)
+        @test size(m.b) == (10,)
+        @test sum(m.b) == 0
+     end
+
+    @testset "Linear" begin
         inputDim=10; outputDim=3
-        m = Linear(input=inputDim, output=outputDim; winit=randn,binit=zeros)
+        m = Linear(input=inputDim, output=outputDim, winit=randn,binit=zeros)
         x = arrtype(zeros(10,2))
         y = m(x)
         @test true
     end
 
-    @testset "dense" begin
+    @testset "Dense" begin
         inputDim=10; outputDim=3
-        m = Dense(input=inputDim, output=outputDim; winit=randn,binit=zeros)
+        m = Dense(input=inputDim, output=outputDim, winit=randn,binit=zeros)
         x = arrtype(zeros(10,2))
         y = m(x)
         @test true

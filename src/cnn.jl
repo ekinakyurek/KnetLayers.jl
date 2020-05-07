@@ -8,15 +8,18 @@ end
 Sampling{T}(;window=2, padding=0, stride=window, mode=0, maxpoolingNanOpt=0, alpha=1) where T <: Function =
     Sampling{T}((window=window, padding=padding, stride=stride, mode=mode, maxpoolingNanOpt=maxpoolingNanOpt, alpha=alpha))
 
-(m::Sampling{typeof(pool)})(x)   =  pool(x;m.options...)
-(m::Sampling{typeof(unpool)})(x) =  unpool(x;m.options...)
+@inline (m::Sampling{typeof(pool)})(x)   =  pool(x;m.options...)
+@inline (m::Sampling{typeof(unpool)})(x) =  unpool(x;m.options...)
 
+Base.show(io::IO,m::Sampling{typeof(pool)})   = print(io,"Pool",m.options)
+Base.show(io::IO,m::Sampling{typeof(unpool)}) = print(io,"UnPool",m.options)
 """
-    Pool(kwargs...)
-    (::Sampling{typeof(pool)})(x)
+    Pool(keywords...)
+Creates a pooling layer, `Sampling{typeof(pool)}`, according to given keyword arguments.
 
-Compute pooling of input values (i.e., the maximum or average of several adjacent
-values) to produce an output with smaller height and/or width.
+    (::Sampling{typeof(pool)})(x)
+Compute pooling of input values (i.e., the maximum or average of several adjacent values)
+to produce an output with smaller height and/or width.
 
 Currently 4 or 5 dimensional KnetArrays with Float32 or Float64 entries are
 supported. If x has dimensions (X1,X2,...,I,N), the result y will have dimensions
@@ -32,60 +35,65 @@ an array/tuple with entries for each spatial dimension.
 Keywords:
 
 * window=2: the pooling window size for each dimension.
-
 * padding=0: the number of extra zeros implicitly concatenated at the
 start and at the end of each dimension.
-
 * stride=window: the number of elements to slide to reach the next pooling
 window.
-
 * mode=0: 0 for max, 1 for average including padded values, 2 for average
 excluding padded values.
-
 * maxpoolingNanOpt=0: Nan numbers are not propagated if 0, they are
 propagated if 1.
-
 * alpha=1: can be used to scale the result.
 
 """
-Pool(;o...) = Sampling{typeof(pool)}(;o...)
+const Pool = Sampling{typeof(pool)}
 
 """
     UnPool(kwargs...)
     (::Sampling{typeof(unpool)})(x)
 
-    Reverse of pooling. It has same kwargs with Pool
+    Reverse of pooling. It has same kwargs with Pool. see `Pool`
 
     x == pool(unpool(x;o...); o...)
 """
-UnPool(;o...) = Sampling{typeof(unpool)}(;o...)
+const UnPool = Sampling{typeof(unpool)}
 ####
 #### Filtering
 ####
-mutable struct Filtering{T<:Function} <: Layer
-    weight
-    bias
-    activation
+mutable struct Filtering{T<:Function,P,A<:ActOrNothing,V<:Bias} <: Layer
+    weight::P
+    bias::V
+    activation::A
     options::NamedTuple
 end
 
 function Filtering{T}(;height::Integer, width::Integer, inout::Pair=1=>1,
-                         winit=xavier, binit=zeros, atype=arrtype,
-                         activation=ReLU(), opts...) where T <: Function
+                       activation::ActOrNothing=NonAct(),
+                       winit=xavier, binit=zeros,
+                       atype=arrtype,
+                       opts...) where T <: Function
+
     wsize = T===typeof(conv4) ? inout : reverse(inout)
     w = param(height,width,wsize...; init=winit, atype=atype)
-    b = binit !== nothing ? param(1,1,inout[2],1; init=binit, atype=atype) : nothing
+    b = binit !== nothing ? Bias(1,1,inout[2],1; init=binit, atype=atype) : Bias(nothing)
     Filtering{T}(w, b, activation; opts...)
+
 end
 
-Filtering{T}(w, b, activation; stride=1, padding=0, mode=0, dilation=1, alpha=1) where T <: Function =
-    Filtering{T}(w, b, activation, (stride=stride, dilation=dilation, mode=mode, alpha=alpha, padding=padding))
+Filtering{T}(w, b, activation; stride=1, padding=0, mode=0, dilation=1, alpha=1) where T =
+    Filtering{T,typeof(w),typeof(activation),typeof(b)}(w, b, activation, (stride=stride, dilation=dilation, mode=mode, alpha=alpha, padding=padding))
 
-(m::Filtering{typeof(conv4)})(x) =
-     postConv(m, conv4(m.weight, make4D(x); m.options...), ndims(x))
+@inline (m::Filtering{typeof(conv4)})(x) =
+     unmake4D(postConv(m, conv4(m.weight, make4D(x); m.options...)), ndims(x))
 
-(m::Filtering{typeof(deconv4)})(x) =
-     postConv(m, deconv4(m.weight, make4D(x); m.options...), ndims(x))
+Base.show(io::IO,m::Filtering{typeof(conv4),P,A,V}) where {P,A,V} =
+    print(io,"Conv{$P,$A,$V}",m.options)
+
+@inline (m::Filtering{typeof(deconv4)})(x) =
+    unmake4D(postConv(m, deconv4(m.weight, make4D(x); m.options...)), ndims(x))
+
+Base.show(io::IO,m::Filtering{typeof(deconv4),P,A,V}) where {P,A,V} =
+    print(io,"DeConv{$P,$A,$V}",m.options)
 
 """
     Conv(;height=filterHeight, width=filterWidth, inout = 1 => 1, kwargs...)
@@ -107,7 +115,7 @@ or an tuple with entries for each spatial dimension.
 
 # Keywords
 * `inout=input_channels => output_channels`
-* `activation=identity`: nonlinear function applied after convolution
+* `activation=NonAct()`: nonlinear function applied after convolution, default is identity.
 * `pool=nothing`: Pooling layer or window size of pooling
 * `winit=xavier`: weight initialization distribution
 * `bias=zeros`: bias initialization distribution
@@ -119,7 +127,7 @@ or an tuple with entries for each spatial dimension.
 * `handle`: handle to a previously created cuDNN context. Defaults to a Knet allocated handle.
 
 """
-Conv(;height::Int, width::Int, o...) = Filtering{typeof(conv4)}(;height=height, width=width, o...)
+const Conv = Filtering{typeof(conv4)}
 
 """
     DeConv(;height=filterHeight, width=filterWidth, inout=1=>1, kwargs...)
@@ -153,23 +161,21 @@ or an tuple with entries for each spatial dimension.
 * `alpha=1`: can be used to scale the result.
 * `handle`: handle to a previously created cuDNN context. Defaults to a Knet allocated handle.
 """
-DeConv(;height::Integer, width::Integer, o...) = Filtering{typeof(deconv4)}(;height=height, width=width, o...)
+const DeConv = Filtering{typeof(deconv4)}
 
 ###
 ### Utils
 ###
-function make4D(x)
+@inline function make4D(x)
     n = ndims(x)
     @assert n < 5 "filtering layers currently supports 4 dimensional arrays"
     n == 4 ? x : reshape(x,size(x)...,ntuple(x->1, 4-n)...)
 end
 
-function postConv(m::Filtering, y, dims)
-    if m.bias !== nothing
-        y = y .+ m.bias
-    end
-    if m.activation !== nothing
-        y = m.activation(y)
-    end
-    return dims>3 ? y : reshape(y,size(y)[1:dims])
-end
+@inline unmake4D(y,dims::Int) = dims>3 ? y : reshape(y,size(y)[1:dims])
+
+@inline postConv(m::Filtering{<:Any,<:Any,<:Activation,<:Bias}, y) = m.activation(m.bias(y))
+
+@inline postConv(m::Filtering{<:Any,<:Any,<:Activation,<:Nothing}, y) = m.activation(y)
+
+@inline postConv(m::Filtering{<:Any,<:Any,<:Nothing,<:Bias}, y) = m.bias(y)

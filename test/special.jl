@@ -1,5 +1,3 @@
-include("header.jl")
-
 @testset "mlp" begin
      atype = KnetLayers.arrtype
      x =atype(randn(10,2))

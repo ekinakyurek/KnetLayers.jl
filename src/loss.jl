@@ -5,29 +5,32 @@ using Statistics
 Calculates negative log likelihood error on your predicted scores.
 `answers` should be integers corresponding to correct class indices.
 If an answer is 0, loss from that answer will not be included.
-This is usefull feature when you are working with unequal length sequences.
+This is the masking feature when you are working with unequal length sequences.
 
-if dims==1
-* size(scores) = C,[B,T1,T2,...]
-* size(answers)= [B,T1,T2,...]
-elseif dims==2
-* size(scores) = [B,T1,T2,...],C
-* size(answers)= [B,T1,T2,...]
+if dims==1,
+    First dimension is assumed to be predicted logits.
+* size(scores) = D,[BATCH,T1,T2,...]
+* size(answers)= [BATCH,T1,T2,...]
+
+elseif dims==2,
+    Last dimension is assumed to be predicted logits.
+* size(scores) = [BATCH,T1,T2,...],D
+* size(answers)= [BATCH,T1,T2,...]
 """
 struct CrossEntropyLoss <: Loss
     dims::Integer
 end
 CrossEntropyLoss(;dims=1) = CrossEntropyLoss(dims)
-(l::CrossEntropyLoss)(y,answers::Array{<:Integer}; average=true) = nllmask(y, answers; dims=l.dims, average=average)
+@inline (l::CrossEntropyLoss)(y,answers::Array{<:Integer}; average=true) = nllmask(y, answers; dims=l.dims, average=average)
 
 """
     BCELoss(average=true)
     (l::BCELoss)(scores, answers)
     Computes binary cross entropy given scores(predicted values) and answer labels. answer values should be {0,1}, then it returns negative of
-    mean|sum(answers * log(p) + (1-answers)*log(1-p)) where p is equal to 1/(1 + exp.(scores)). See also LogisticLoss.
+    mean|sum(answers * log(p) + (1-answers)*log(1-p)) where p is equal to 1/(1 + exp.(scores)). see `LogisticLoss`.
 """
 struct BCELoss <: Loss end
-(l::BCELoss)(y,answers::Array{<:Integer})=bce(y,answers)
+@inline (l::BCELoss)(y,answers::Array{<:Integer})=bce(y,answers)
 
 """
     LogisticLoss(average=true)
@@ -36,12 +39,33 @@ struct BCELoss <: Loss end
     exp(-answers*scores))). See also `BCELoss`.
 """
 struct LogisticLoss <: Loss end
-(l::LogisticLoss)(y,answers::Array{<:Integer})=logistic(y,answers)
+@inline (l::LogisticLoss)(y,answers::Array{<:Integer}) = logistic(y,answers)
+
+
+"""
+    SigmoidCrossEntropyLoss()
+    (l::SigmoidCrossEntropyLoss)(scores, labels)
+
+Measures the error in discrete classification tasks in which each class is independent and not mutually exclusive.
+`labels` should be same size with scores where existing classes pointed by one others zero.
+
+if dims==1, First dimension is assumed to be predicted logits.
+
+elseif dims==2, Last dimension is assumed to be predicted logits.
+"""
+struct SigmoidCrossEntropyLoss <: Loss
+    dims::Int
+end
+SigmoidCrossEntropyLoss(;dims=1) = SigmoidCrossEntropyLoss(dims)
+function (l::SigmoidCrossEntropyLoss)(x, z; average=true)
+    y = sum(relu.(x) .- x .* z - log.(sigm.(abs.(x))), dims=:)
+    average ? y ./ (prod(size(x))/prod(size(x)[l.dims])) : y
+end
 
 ####
 #### Utils
 ####
-function nllmask(y,a::AbstractArray{<:Integer}; dims=1, average=true)
+@inline function nllmask(y,a::AbstractArray{<:Integer}; dims=1, average=true)
     indices = findindices(y, a, dims=dims)
     lp = logp(y,dims=dims)[indices]
     average ? -mean(lp) : -sum(lp)

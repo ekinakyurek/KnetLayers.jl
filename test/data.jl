@@ -1,7 +1,5 @@
-include("header.jl")
 import KnetLayers: IndexedDict
 @testset "data" begin
-
     data = "this is an example data with example words"
     vocab = IndexedDict{String}()
     append!(vocab,split(data))

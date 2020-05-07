@@ -2,19 +2,18 @@
     MLP(h::Int...;kwargs...)
 
 
-Creates a multi layer perceptron according to given hidden states.
-First hidden state is equal to input size and the last one equal to output size.
+Creates a multi layer perceptron according to given `h`s.
+First `h` should be input size and the last one should be output size.
 
     (m::MLP)(x)
 
-
-Runs MLP with given input `x`. `prob` is the dropout probability.
+Runs MLP with given input `x`.
 
 # Keywords
 
 * `winit=xavier`: weight initialization distribution
 * `bias=zeros`: bias initialization distribution
-* `activation=ReLU()`: activation layer or function
+* `activation=ReLU()`: activation layer between layers
 * `atype=KnetLayers.arrtype` : array type for parameters.
    Default value is KnetArray{Float32} if you have gpu device. Otherwise it is Array{Float32}
 *  pdrop=0: dropout probability between layers
