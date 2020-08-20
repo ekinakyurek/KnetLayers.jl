@@ -1,7 +1,9 @@
 module KnetLayers
 
-using Knet, LinearAlgebra
-import Knet: save, load, gc, rnnforw, rnninit, _ser, RNN, BNMoments
+using Knet, AutoGrad, CUDA, LinearAlgebra
+import Knet.FileIO_gpu: save, load, _ser, JLDMODE
+import Knet.KnetArrays: gc
+import Knet.Ops20: rnnforw, rnninit, RNN, BNMoments
 
 export gpu, KnetArray,
        relu, sigm, elu, invx, mat, bmm,
@@ -32,7 +34,7 @@ arrtype = Array{Float32}
 """
     Used for setting default underlying array type for layer parameters.
 
-    settype!(t::T) where T<:Type{KnetArray{V}} where V <: AbstractFloat = gpu()>=0 ? (global arrtype=t) : error("No GPU available")
+    settype!(t::T) where T<:Type{KnetArray{V}} where V <: AbstractFloat = CUDA.functional() ? (global arrtype=t) : error("No GPU available")
     settype!(t::T) where T<:Type{Array{V}} where V <: AbstractFloat = (global arrtype=t)
     settype!(t::Union{Type{KnetArray},Type{Array}}) = settype!(t{Float32})
 
@@ -42,7 +44,7 @@ julia> KnetLayers.settype!(KnetArray) # on a GPU machine
 KnetArray{Float32}
 ```
 """
-settype!(t::T) where T<:Type{KnetArray{V}} where V <: AbstractFloat = gpu()>=0 ? (global arrtype=t) : error("No GPU available")
+settype!(t::T) where T<:Type{KnetArray{V}} where V <: AbstractFloat = CUDA.functional() ? (global arrtype=t) : error("No GPU available")
 settype!(t::T) where T<:Type{Array{V}} where V <: AbstractFloat = (global arrtype=t)
 settype!(t::Union{Type{KnetArray},Type{Array}}) = settype!(t{Float32})
 
@@ -62,7 +64,7 @@ include("../data/one_hot.jl");
 
 
 function __init__()
-    global arrtype = gpu()>=0 ? KnetArray{Float32} : Array{Float32}
+    global arrtype = CUDA.functional() ? KnetArray{Float32} : Array{Float32}
 end
 
 end # module

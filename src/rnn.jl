@@ -109,7 +109,7 @@ for layer in (:SRNN, :LSTM, :GRU)
                          usegpu=(arrtype <: KnetArray), dataType=eltype(arrtype), o...)
             embedding,inputSize = _getEmbed(input,embed)
             rnnType = $layer==SRNN ? activation : Symbol(lowercase($layername))
-            r = RNN(inputSize, hidden; rnnType=rnnType, usegpu=usegpu, dataType=dataType, o...)
+            r = RNN(inputSize, hidden; rnnType=rnnType, atype=(usegpu ? KnetArray{dataType} : Array{dataType}), o...)
             $layer(embedding,r.w,r,gatesview($layer,r))
         end
     end
@@ -149,7 +149,7 @@ gatesview(T::Type{<:AbstractRNN},r::RNN) =
                       input_mappings,param_mappings))
 
 # Saves from unnecessary memory taken by gatesview
-function _ser(r::T, s::IdDict, m::typeof(Knet.JLDMODE)) where T <: AbstractRNN
+function _ser(r::T, s::IdDict, m::typeof(JLDMODE)) where T <: AbstractRNN
     if !haskey(s,r)
         if r.gatesview !== nothing
             s[r] = T(_ser(r.embedding,s,m), _ser(r.params,s,m), _ser(r.specs,s,m), nothing)
