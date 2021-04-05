@@ -1,17 +1,23 @@
 module KnetLayers
 
-using Knet, LinearAlgebra
-import Knet: save, load, gc, rnnforw, rnninit, _ser, RNN, BNMoments
+import Knet # seed!, atype, dir
+using LinearAlgebra
+using AutoGrad: value, grad, cat1d, params, Param, @diff, @zerograd
+using Knet.Ops20: relu, sigm, elu, invx, mat, bmm, logp, logsumexp, nll, bce, logistic, accuracy, zeroone, dropout, softmax, rnnforw, rnninit, rnnparam, RNN, BNMoments, conv4, deconv4, pool, unpool
+using Knet.Train20: Data, minibatch, param, param0, gaussian, xavier, bilinear, SGD, Momentum, Nesterov, Adam, Adagrad, Adadelta, Rmsprop, update!, optimizers, train!, converge!, adam!, sgd!, nesterov!, rmsprop!, progress!, adam, converge, sgd, nesterov, rmsprop, progress, hyperband, goldensection
+using Knet.LibKnet8: gpu
+using Knet.KnetArrays: KnetArray, setseed, cpucopy, gpucopy, save, load, gc, JLDMODE
+import Knet.KnetArrays: _ser
 
 export gpu, KnetArray,
-       relu, sigm, elu, invx, mat, bmm,
+       relu, sigm, elu, invx, mat, bmm, conv4, deconv4, pool, unpool, 
        logp, logsumexp, nll, bce, logistic, accuracy, zeroone, dropout, softmax,
        Data, minibatch,
        param, param0, params,
        gaussian, xavier, bilinear, setseed,
        SGD, Momentum, Nesterov, Adam, Adagrad, Adadelta, Rmsprop, update!, optimizers,
        train!, converge!, adam!, sgd!, nesterov!, rmsprop!, progress!,
-       adam, converge, train, sgd, nesterov, rmsprop, progress,
+       adam, converge, sgd, nesterov, rmsprop, progress,
        hyperband, goldensection, cpucopy, gpucopy,
        value, grad, cat1d, Param, @diff, @zerograd
 
