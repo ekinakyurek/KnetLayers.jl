@@ -125,7 +125,7 @@ function Base.show(io::IO, m::AbstractRNN{P,E}) where {P,E}
     if r.numLayers > 1; print(io, ",layers=", r.numLayers); end
     if r.dropout > 0; print(io, ",dropout=", r.dropout); end
     if r.inputMode == 1; print(io, ",skipinput"); end
-    if r.atype != arrtype; print(io, ',', r.atype); end
+    if r.dataType != Float32; print(io, ',', r.dataType); end
     print(io, ')')
 end
 
