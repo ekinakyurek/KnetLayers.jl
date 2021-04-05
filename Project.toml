@@ -1,7 +1,7 @@
 name = "KnetLayers"
 uuid = "e09e3f5a-3c2e-516c-a806-60ae64389a85"
 authors = ["ekinakyurek <akyurekekin@gmail.com>"]
-version = "0.2.0"
+version = "0.3.0"
 
 [deps]
 ArgParse = "c7e460c6-2fb9-53a9-8c5b-16f535851c63"
