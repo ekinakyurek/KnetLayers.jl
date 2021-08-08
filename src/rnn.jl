@@ -107,7 +107,7 @@ for layer in (:SRNN, :LSTM, :GRU)
         function $layer(;input::Integer, hidden::Integer, embed=nothing, activation=:relu, atype=arrtype, o...)
             embedding,inputSize = _getEmbed(input,embed)
             rnnType = $layer==SRNN ? activation : Symbol(lowercase($layername))
-            r = RNN(inputSize, hidden; rnnType=rnnType, atype=(usegpu ? KnetArray{dataType} : Array{dataType}), o...)
+            r = RNN(inputSize, hidden; rnnType, atype, o...)
             $layer(embedding,r.w,r,gatesview($layer,r))
         end
     end
