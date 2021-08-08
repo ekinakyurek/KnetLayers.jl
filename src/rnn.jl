@@ -75,12 +75,11 @@ see `RNNOutput` for output details
 * `bidirectional=false`: Create a bidirectional RNN if `true`.
 * `dropout=0`: Dropout probability. Ignored if `numLayers==1`.
 * `skipInput=false`: Do not multiply the input with a matrix if `true`.
-* `dataType=eltype(KnetLayers.arrtype)`: Data type to use for weights. Default is Float32.
 * `algo=0`: Algorithm to use, see CUDNN docs for details.
 * `seed=0`: Random number seed for dropout. Uses `time()` if 0.
 * `winit=xavier`: Weight initialization method for matrices.
 * `binit=zeros`: Weight initialization method for bias vectors.
-* `usegpu=(KnetLayers.arrtype <: KnetArray)`: GPU used by default if one exists.
+* `atype=KnetLayers.arrtype`: array type for model weights.
 
 # Keywords
 
@@ -105,8 +104,7 @@ for layer in (:SRNN, :LSTM, :GRU)
 
         @inline (m::$layer)(x,h...;o...) = RNNOutput(_forw(m,x,h...;o...)...)
         # FIXME: activation input is not compatible with rest of the package
-        function $layer(;input::Integer, hidden::Integer, embed=nothing, activation=:relu,
-                         usegpu=(arrtype <: KnetArray), dataType=eltype(arrtype), o...)
+        function $layer(;input::Integer, hidden::Integer, embed=nothing, activation=:relu, atype=arrtype, o...)
             embedding,inputSize = _getEmbed(input,embed)
             rnnType = $layer==SRNN ? activation : Symbol(lowercase($layername))
             r = RNN(inputSize, hidden; rnnType=rnnType, atype=(usegpu ? KnetArray{dataType} : Array{dataType}), o...)
@@ -147,6 +145,7 @@ gatesview(T::Type{<:AbstractRNN},r::RNN) =
           for (l,d,(g,id),(ih,ihid),(ty,param)) in
               product(1:r.numLayers,0:r.direction,gate_mappings(T),
                       input_mappings,param_mappings))
+
 
 # Saves from unnecessary memory taken by gatesview
 function _ser(r::T, s::IdDict, m::typeof(JLDMODE)) where T <: AbstractRNN

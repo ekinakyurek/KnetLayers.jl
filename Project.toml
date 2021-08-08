@@ -1,7 +1,7 @@
 name = "KnetLayers"
 uuid = "e09e3f5a-3c2e-516c-a806-60ae64389a85"
 authors = ["ekinakyurek <akyurekekin@gmail.com>"]
-version = "0.2.1"
+version = "0.3.0"
 
 [deps]
 ArgParse = "c7e460c6-2fb9-53a9-8c5b-16f535851c63"
@@ -25,7 +25,6 @@ WordTokenizers = "796a5d58-b03d-544a-977e-18100b691f6e"
 ZipFile = "a5390f91-8eb1-5f08-bee0-b1d1ffed6cea"
 
 [compat]
-Knet = "1.4"
 julia = "1.0"
 
 [extras]
