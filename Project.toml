@@ -26,6 +26,20 @@ ZipFile = "a5390f91-8eb1-5f08-bee0-b1d1ffed6cea"
 
 [compat]
 julia = "1.0"
+ArgParse = "1.0"
+AutoGrad = "1.0"
+BytePairEncoding = "0.2"
+CUDA = "3.0"
+CodecZlib = "0.7"
+DataDeps = "0.7"
+HTTP = "0.9"
+InternedStrings = "0.7"
+JSON = "0.21"
+Knet = "1.4"
+LightXML = "0.9"
+NPZ = "0.4"
+WordTokenizers = "0.5"
+ZipFile = "0.9"
 
 [extras]
 Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
