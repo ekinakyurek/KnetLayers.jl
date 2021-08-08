@@ -7,8 +7,8 @@ version = "0.2.1"
 ArgParse = "c7e460c6-2fb9-53a9-8c5b-16f535851c63"
 AutoGrad = "6710c13c-97f1-543f-91c5-74e8f7d95b35"
 BytePairEncoding = "a4280ba5-8788-555a-8ca8-4a8c3d966a71"
-CodecZlib = "944b1d66-785c-5afd-91f1-9de20f533193"
 CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
+CodecZlib = "944b1d66-785c-5afd-91f1-9de20f533193"
 DataDeps = "124859b0-ceae-595e-8997-d05f6a7a8dfe"
 Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
 DelimitedFiles = "8bb1440f-4735-579b-a4ab-409b98df4dab"
@@ -25,13 +25,13 @@ WordTokenizers = "796a5d58-b03d-544a-977e-18100b691f6e"
 ZipFile = "a5390f91-8eb1-5f08-bee0-b1d1ffed6cea"
 
 [compat]
-Knet = "1.4.0"
-julia = "1.0.0"
+Knet = "1.4"
+julia = "1.0"
 
 [extras]
-Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
-Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
 Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
+Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
 test = ["Printf", "Test", "Dates"]

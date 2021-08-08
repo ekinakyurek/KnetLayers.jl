@@ -1,8 +1,7 @@
 module KnetLayers
 
 using Knet, AutoGrad, CUDA, LinearAlgebra
-import Knet.FileIO_gpu: save, load, _ser, JLDMODE
-import Knet.KnetArrays: gc
+import Knet.KnetArrays: gc, save, load, _ser, JLDMODE
 import Knet.Ops20: rnnforw, rnninit, RNN, BNMoments
 
 export gpu, KnetArray,
